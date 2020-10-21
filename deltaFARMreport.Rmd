@@ -1589,3 +1589,4 @@ text(1, rdmean, paste(round(rdmean,0)), pos = 3)
 
 ```
 
+here at the very end of the markdown file is a test to see how git works. will it cross over to my workstation from the macbook?
