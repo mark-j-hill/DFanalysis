@@ -77,6 +77,70 @@ dat$season <- ifelse(
 dat <- dat %>% 
   mutate(season = as.factor(season))
 
+
+# add location data -------------------------------------------------------
+ 
+df_samplesites <- read.csv("df_samplesites.csv")
+dat <- left_join(dat, df_samplesites)
+
+# change locations for fields that moved
+dat[dat$sampleid == "ARR1",]$lat <-
+  ifelse(
+    dat[dat$sampleid == "ARR1",]$Date >="2019-10-18",
+    33.7475234, # New location 
+    33.743923   # old location 
+  )
+dat[dat$sampleid == "ARR1",]$long <-
+  ifelse(
+    dat[dat$sampleid == "ARR1",]$Date >="2019-10-18",
+    -90.439047, # New location 
+    -90.434174   # old location 
+  )
+
+dat[dat$sampleid == "ARR2",]$lat <-
+  ifelse(
+    dat[dat$sampleid == "ARR2",]$Date >="2019-10-18",
+    33.747566, # New location 
+    33.7439064   # old location 
+  )
+dat[dat$sampleid == "ARR2",]$long <-
+  ifelse(
+    dat[dat$sampleid == "ARR2",]$Date >="2019-10-18",
+    -90.441001, # New location 
+    -90.431302   # old location 
+  )
+
+dat[dat$sampleid == "STU1",]$lat <-
+  ifelse(
+    dat[dat$sampleid == "STU1",]$Date >="2019-12-5",
+    33.8177149, # New location 
+    33.7921411   # old location 
+  )
+dat[dat$sampleid == "STU1",]$long <-
+  ifelse(
+    dat[dat$sampleid == "STU1",]$Date >="2019-12-5",
+    -90.252741, # New location 
+    -90.267364   # old location 
+  )
+
+dat[dat$sampleid == "STU2",]$lat <-
+  ifelse(
+    dat[dat$sampleid == "STU2",]$Date >="2019-12-5",
+    33.8194787, # New location 
+    33.7955973   # old location 
+  )
+dat[dat$sampleid == "STU2",]$long <-
+  ifelse(
+    dat[dat$sampleid == "STU2",]$Date >="2019-12-5",
+    -90.258794, # New location 
+    -90.272795   # old location 
+  )
+
+
+specify_decimal <- function(x, k) trimws(format(round(x, k), nsmall=k))
+dat$lat <- specify_decimal(dat$lat, 7)
+dat$long <- specify_decimal(dat$long, 7)
+
 # LOGIC CHECK -------------------------------------------------------------
 
 # Here the standard columns are checked and any data from dates where the 
@@ -121,7 +185,7 @@ dat[,27] <- ifelse(
 )
 
 # Next we replace data in the loads columns. Since they are spaced differently,
-# it has to be doe in 3 different loops.
+# it has to be done in 3 different loops.
 
 # replace tss loads
 for (i in c(21, 24, 27)) { 
@@ -484,9 +548,9 @@ dat <- dat[-c(22:31)]
 
 # introduce a list with the field acreages and merge it with our dat so we can calculate loads, housekeeping
 
-a <- as.data.frame(cbind(c("ARR1", "ARR2",  "PBR1", "PBR2", "STU1", "STU2", "MOS1", "MOS2", "DCDC1",
-             "DCDC2", "SCH1", "SCH2", "PRE1", "PRE2", "MUZ1", "MUZ2", "SIM1", "SIM2", "MUR1", "MUR2", "CAR1", "CAR2"),
-          c(21.24, 22.35, 76.2, 34.72, 105.35, 49.64, 27.83, 27.63, 28.78, 31.52,
+a <- as.data.frame(cbind(c("ARR1", "ARR2",  "PBR1", "PBR2", "STU1", "STU2", "MOS1", "MOS2", "DCDC1", "DCDC2",
+                           "SCH1", "SCH2", "PRE1", "PRE2", "MUZ1", "MUZ2", "SIM1", "SIM2", "MUR1", "MUR2", "CAR1", "CAR2"),
+          c(14.55, 15.48, 52.39, 23.89, 73.04, 34.24, 19.23, 19.26, 20.33, 20.73,
              10.38, 9.12, 36.62, 37.37, 19.29, 17.83, 14.29, 17.59, 19.04, 16.13, 22.36, 23.4)))
 
 
@@ -507,32 +571,32 @@ names(dat)[names(dat) == "V2"] <- "acres"
 dat[dat$sampleid == "ARR1",]$acres <-
   ifelse(
     dat[dat$sampleid == "ARR1",]$Date >="2019-10-18",
-    11.41, # New field size
-    21.24   # old field size
+    7.84, # New field size
+    14.55   # old field size
   )
 
 dat[dat$sampleid == "ARR2",]$acres <-
   ifelse(
     dat[dat$sampleid == "ARR2",]$Date >="2019-10-18",
-    10.12, # New field size
-    22.35   # old field size
+    6.94, # New field size
+    15.48   # old field size
   )
 
 dat[dat$sampleid == "STU1",]$acres <-
   ifelse(
     dat[dat$sampleid == "STU1",]$Date >="2019-12-5",
-    30.2, # New field size
-    105.35   # old field size
+    29.97, # New field size
+    73.04   # old field size
   )
 
 dat[dat$sampleid == "STU2",]$acres <-
   ifelse(
     dat[dat$sampleid == "STU2",]$Date >="2019-12-5",
-    23.08, # New field size
-    49.64   # old field size
+    15.85, # New field size
+    34.24   # old field size
   )
 
-dat <- dat[c(2,1,3:27)]
+dat <- dat[c(2,1,3:29)]
 #calculate loads
 dat$in.runoff.ac <- dat$acft.discharge * 12 / dat$acres
 dat$TSS.kg <- dat$TSS.mgl * dat$event.disch.l / 1000000
@@ -546,7 +610,7 @@ dat$TN.lbac <- dat$TN.lb / dat$acres
 dat$TIP.lbac <- dat$TIP.lb / dat$acres
 
 #rearrange columns
-dat <- dat[c(1:21,28:37,22:27)]
+dat <- dat[c(1:21,30:39,22:29)]
 
 # PAIR DATA ---------------------------------------------------------------
 
@@ -1319,7 +1383,7 @@ for ( i in c(51,53,55,59,61,65,77, 93, 95)){
           ylab = "(+) represents reduction from treatment"
           )
 }
-title( "Overall Reduction potential", outer = T)
+title("Overall Reduction potential", outer = T)
 
 
 ## during the cover season
