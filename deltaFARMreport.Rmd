@@ -966,7 +966,7 @@ kable(df, digits = 5, caption = "Table 6.1: Shapiro-Wilk normality test results"
 
 
 ### Anlayte concentrations by treatment and across time
-Tables 5.2-8 nicely summarize our variable distributions yet plotting these can prove more meaningful, or at least better illustrate them. Here we want to understand several factors that we have established already: entire data, paired data points, and events that occured during our cover crop season, as well as paired events during the cover season. As we have established that our data in non-normal, i went ahead and superimposed the results for a two sided rank sum test. A p-value less than 0.05 would indicate that we can reject the null hypothesis that these samples are from the same population. In lower plot a black bar represents the median value and blue line is a locally smoothed regression line to aid in seeing trend over time. (method= `loess()`)
+Tables 5.2-8 nicely summarize our variable distributions yet plotting these can prove more meaningful, or at least better illustrate them. Here we want to understand several factors that we have established already: entire data, paired data points, and events that occurred during our cover crop season, as well as paired events during the cover season. As we have established that our data in non-normal, I went ahead and superimposed the results for a two sided rank sum test. A p-value less than 0.05 would indicate that we can reject the null hypothesis that the difference in means is equal to 0. In lower plot a black bar represents the median value and blue line is a locally smoothed regression line to aid in seeing trend over time. (method= `loess()`)
 ```{r, out.width= "100%", warning= FALSE, message= FALSE, fig.cap= "Figure 6.2"}
 p1 <- ggplot(dat[dat$sample.type == "EOF",], 
              aes(y= TSS.mgl, x= "All year", colour= treatment))+
@@ -981,7 +981,7 @@ p2 <- ggplot(dat.pair[dat.pair$sample.type == "EOF",],
              aes(y= TSS.mgl, x= " paired All year", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
   coord_cartesian(ylim= c(0,5000))+
-  stat_compare_means(
+  stat_compare_means(method.args = list(alternative = "greater"), paired= TRUE,
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 3800)+
   theme(axis.title.y = element_blank(), axis.title.x = element_blank())
@@ -999,7 +999,7 @@ p4 <- ggplot(dat.pair[dat.pair$sample.type == "EOF" & dat.pair$season == "cover"
              aes(y= TSS.mgl, x= "paired Cover season", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
   coord_cartesian(ylim= c(0,5000))+
-  stat_compare_means(
+  stat_compare_means(method.args = list(alternative = "greater"), paired= TRUE,
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 3800)+
   theme(axis.title.y = element_blank(), axis.title.x = element_blank())
@@ -1033,7 +1033,7 @@ p2 <- ggplot(dat.pair[dat.pair$sample.type == "EOF",],
              aes(y= TUR.ntu, x= "paired All year", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
   coord_cartesian(ylim= c(0,5000))+
-  stat_compare_means(
+  stat_compare_means(method.args = list(alternative = "greater"), paired= TRUE,
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 3800)+
   theme(axis.title.y = element_blank(), axis.title.x = element_blank())
@@ -1051,7 +1051,7 @@ p4 <- ggplot(dat.pair[dat.pair$sample.type == "EOF" & dat.pair$season == "cover"
              aes(y= TUR.ntu, x= "paired Cover season", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
   coord_cartesian(ylim= c(0,5000))+
-  stat_compare_means(
+  stat_compare_means(method.args = list(alternative = "greater"), paired= TRUE,
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 3800)+
   theme(axis.title.y = element_blank(), axis.title.x = element_blank())
@@ -1084,7 +1084,7 @@ p2 <- ggplot(dat.pair[dat.pair$sample.type == "EOF",],
              aes(y= NO3.NO2.mgl, x= " paired All year", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
   coord_cartesian(ylim= c(0,9))+
-  stat_compare_means(
+  stat_compare_means(paired= TRUE, method.args = list(alternative = "greater"),
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 7.5)+
   theme(axis.title.y = element_blank(), axis.title.x = element_blank())
@@ -1103,7 +1103,7 @@ p4 <- ggplot(dat.pair[dat.pair$sample.type == "EOF" & dat.pair$season == "cover"
              aes(y= NO3.NO2.mgl, x= "paired Cover season", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
   coord_cartesian(ylim= c(0,9))+
-  stat_compare_means(
+  stat_compare_means(paired= TRUE,  method.args = list(alternative = "greater"),
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 7.5)+
   theme(axis.title.y = element_blank(), axis.title.x = element_blank())
@@ -1137,7 +1137,7 @@ p2 <- ggplot(dat.pair[dat.pair$sample.type == "EOF",],
              aes(y= TKN.mgl, x= "paired All year", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
   coord_cartesian(ylim= c(0,5))+
-  stat_compare_means(
+  stat_compare_means(method.args = list(alternative = "greater"), paired= TRUE,
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 4)+
   theme(axis.title.y = element_blank(), axis.title.x = element_blank())
@@ -1155,7 +1155,7 @@ p4 <- ggplot(dat.pair[dat.pair$sample.type == "EOF" & dat.pair$season == "cover"
              aes(y= TKN.mgl, x= "paired Cover season", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
   coord_cartesian(ylim= c(0,5))+
-  stat_compare_means(
+  stat_compare_means(method.args = list(alternative = "greater"), paired= TRUE,
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 4)+
   theme(axis.title.y = element_blank(), axis.title.x = element_blank())
@@ -1189,7 +1189,7 @@ p2 <- ggplot(dat.pair[dat.pair$sample.type == "EOF",],
              aes(y= TN.mgl, x= "paired All year", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
   coord_cartesian(ylim= c(0,14))+
-  stat_compare_means(
+  stat_compare_means(method.args = list(alternative = "greater"), paired= TRUE,
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 11.5)+
   theme(axis.title.y = element_blank(), axis.title.x = element_blank())
@@ -1207,7 +1207,7 @@ p4 <- ggplot(dat.pair[dat.pair$sample.type == "EOF" & dat.pair$season == "cover"
              aes(y= TN.mgl, x= "paired Cover season", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
   coord_cartesian(ylim= c(0,14))+
-  stat_compare_means(
+  stat_compare_means(method.args = list(alternative = "greater"), paired= TRUE,
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 11.5)+
   theme(axis.title.y = element_blank(), axis.title.x = element_blank())
@@ -1242,7 +1242,7 @@ p2 <- ggplot(dat.pair[dat.pair$sample.type == "EOF",],
              aes(y= TIP.mgl, x= "paired All year", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
   coord_cartesian(ylim= c(0,14))+
-  stat_compare_means(
+  stat_compare_means(method.args = list(alternative = "greater"), paired= TRUE,
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 11.5)+
   theme(axis.title.y = element_blank(), axis.title.x = element_blank())
@@ -1260,7 +1260,7 @@ p4 <- ggplot(dat.pair[dat.pair$sample.type == "EOF" & dat.pair$season == "cover"
              aes(y= TIP.mgl, x= "paired Cover season", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
   coord_cartesian(ylim= c(0,14))+
-  stat_compare_means(
+  stat_compare_means(method.args = list(alternative = "greater"), paired= TRUE,
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 11.5)+
   theme(axis.title.y = element_blank(), axis.title.x = element_blank())
@@ -1297,7 +1297,7 @@ p2 <- ggplot(dat.pair[dat.pair$sample.type == "EOF",],
              aes(y= NH3.mgl, x= "paired All year", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
   coord_cartesian(ylim= c(0, 0.75))+
-  stat_compare_means(
+  stat_compare_means(method.args = list(alternative = "greater"), paired= TRUE,
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 0.55)+
   theme(axis.title.y = element_blank(), axis.title.x = element_blank())
@@ -1315,7 +1315,7 @@ p4 <- ggplot(dat.pair[dat.pair$sample.type == "EOF" & dat.pair$season == "cover"
              aes(y= NH3.mgl, x= "paired Cover season", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
   coord_cartesian(ylim= c(0, 0.75))+
-  stat_compare_means(
+  stat_compare_means(method.args = list(alternative = "greater"), paired= TRUE,
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 0.55)+
   theme(axis.title.y = element_blank(), axis.title.x = element_blank())
@@ -1351,7 +1351,7 @@ p2 <- ggplot(dat.pair[dat.pair$sample.type == "EOF",],
              aes(y= OrthoP.mgl, x= "paired All year", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
   coord_cartesian(ylim= c(0,0.75))+
-  stat_compare_means(
+  stat_compare_means(method.args = list(alternative = "greater"), paired= TRUE,
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 0.6)+
   theme(axis.title.y = element_blank(), axis.title.x = element_blank())
@@ -1369,7 +1369,7 @@ p4 <- ggplot(dat.pair[dat.pair$sample.type == "EOF" & dat.pair$season == "cover"
              aes(y= OrthoP.mgl, x= "paired Cover season", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
   coord_cartesian(ylim= c(0, 0.75))+
-  stat_compare_means(
+  stat_compare_means(method.args = list(alternative = "greater"), paired= TRUE,
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 0.6)+
   theme(axis.title.y = element_blank(), axis.title.x = element_blank())
@@ -1405,7 +1405,7 @@ p2 <- ggplot(dat.pair[dat.pair$sample.type == "EOF",],
              aes(y= NOx.mgl, x= "paired All year", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
   coord_cartesian(ylim= c(0,3.5))+
-  stat_compare_means(
+  stat_compare_means(method.args = list(alternative = "greater"), paired= TRUE,
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 2.25)+
   theme(axis.title.y = element_blank(), axis.title.x = element_blank())
@@ -1423,7 +1423,7 @@ p4 <- ggplot(dat.pair[dat.pair$sample.type == "EOF" & dat.pair$season == "cover"
              aes(y= NOx.mgl, x= "pair Cover season", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
   coord_cartesian(ylim= c(0, 3.5))+
-  stat_compare_means(
+  stat_compare_means(method.args = list(alternative = "greater"), paired= TRUE,
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 2.25)+
   theme(axis.title.y = element_blank(), axis.title.x = element_blank())
