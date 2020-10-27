@@ -35,6 +35,7 @@ library(mosaic)
 library(mosaicData)
 library(patchwork)
 library(mice)
+library(readxl)
 # READ AND CLEAN ----------------------------------------------------------
 
 # This is where the data is initially read in. Nothing special here, just
@@ -1436,6 +1437,51 @@ text(1, rdmean, paste(round(rdmean,0)),  adj = 10)
 
 
 dev.off()
+
+
+# Instream reductions -----------------------------------------------------
+
+INST <- dat[dat$sample.type== "INST",]%>% 
+  rename(LOCCODE = sampleid,
+         TSS= TSS.mgl,
+         TUR = TUR.ntu,
+         NN = NOx.mgl,
+         TKN= TKN.mgl,
+         TN = TN.mgl,
+         TIP = TIP.mgl,
+         NH3 = NH3.mgl,
+         DIP = OrthoP.mgl
+         )
+
+oldINST <- read.csv("combinedgrabs.csv") %>% 
+ rename(Date = 1,
+        TUR = 13)  %>% 
+  mutate(
+         Date = lubridate::mdy(Date),
+         Alk = as.numeric(Alk),
+         NH3 = as.numeric(NH3),
+         TSS = as.numeric(TSS),
+         NN = as.numeric(NN),
+         TP = as.numeric(TP),
+         TN = as.numeric(TN),
+         OrgN = as.numeric(OrgN),
+         TOC = as.numeric(TOC),
+         COD = as.numeric(COD),
+         Cl = as.numeric(Cl),
+         TKN = as.numeric(TKN)
+         )
+  
+test <- full_join(INST, oldINST)
+test <- test[,-c(4:8, 20:31, 39:41)]
+
+
+ggplot(test)+
+  geom_boxplot(aes(x= LOCCODE, y= DIP))
+
++
+  coord_cartesian(ylim = c(0,2500))
+
+
 
 # scratch -----------------------------------------------------------------
 data <- dat$NO3.NO2.mgl
