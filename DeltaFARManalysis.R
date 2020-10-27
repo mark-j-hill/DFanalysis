@@ -1476,11 +1476,8 @@ test <- test[,-c(4:8, 20:31, 39:41)]
 
 
 ggplot(test)+
-  geom_boxplot(aes(x= LOCCODE, y= DIP))
-
-+
-  coord_cartesian(ylim = c(0,2500))
-
+  geom_boxplot(aes(x= LOCCODE, y= NN))
+ 
 
 
 # scratch -----------------------------------------------------------------
