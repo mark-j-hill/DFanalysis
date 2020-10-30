@@ -3,16 +3,16 @@ title: "Delta F.A.R.M. project data management"
 author: "Mark Hill and Andrew Lucore"
 date: "8/29/2020"
 output:
+  pdf_document:
+    toc: yes
   html_document:
+    
     dev: svg
     df_print: paged
     number_sections: yes
     toc: yes
     toc_float:
       colllapsed: true
-    
-  pdf_document:
-    toc: yes
 editor_options:
   chunk_output_type: inline
 ---

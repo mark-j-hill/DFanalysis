@@ -1,0 +1,1003 @@
+---
+title: |
+  <center> INSTREAM reductions </center>
+  <center> Delta F.A.R.M. </center>
+
+author: "Mark Hill"
+date: "10/28/2020"
+output:
+  pdf_document: 
+    toc: no
+    toc_depth: 3
+  html_document: default
+---
+\newpage
+\thispagestyle{empty}
+\mbox{}
+
+\tableofcontents
+
+\newpage
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, message=FALSE}
+library(lubridate)
+library(tidyverse)
+library(dplyr)
+library(ggpubr)
+library(ggsignif)
+library(stats)
+library(zoo)
+library(scales)
+library(gridExtra)
+library(grid)
+library(mosaic)
+library(mosaicData)
+library(patchwork)
+library(mice)
+library(readxl)
+```
+
+
+```{r, echo= FALSE, message= FALSE, warning= FALSE, results= 'hide' }
+dat <- read.csv("DF_final.csv",
+                stringsAsFactors = FALSE,
+                na.strings = c("", "NA") # replaces blanks with NAs
+               # skip = 1 # skips to the first row for data
+) %>% 
+mutate( 
+    # changes the formatting of some of the columns to make R happier
+    Date = lubridate::mdy(Date),
+    # makes the dates as dates R will recognize
+    sampleid = as.factor(sampleid),
+    # Sets the sampleid column as a factor instead of text strings
+    farm = as.factor(farm),
+    # Sets the Farm column as a factor instead of text strings
+    treatment = as.factor(treatment),
+    # Sets the Treatment column as a factor instead of text strings
+    TUR_ntu = as.numeric(TUR_ntu),      
+    # Sets turbidity as a number instead of text strings 
+    #(I have no idea why it wasn't already)
+    sample_type = as.factor(sample_type)
+  )
+
+# replace underscores in the column headers with periods
+names(dat) <- gsub(
+  x = names(dat), 
+  pattern = "\\_", 
+  replacement = "."
+)
+
+dat$season <- ifelse(
+  month(dat$Date) == 11 | month(dat$Date) ==  12 | month(dat$Date) == 1| 
+    month(dat$Date) == 2 |  month(dat$Date) == 3 | month(dat$Date) == 4,
+  "cover",
+  "cash")
+
+dat <- dat %>% 
+  mutate(season = as.factor(season))
+
+
+# add location data -------------------------------------------------------
+ 
+df_samplesites <- read.csv("df_samplesites.csv")
+dat <- left_join(dat, df_samplesites)
+
+# change locations for fields that moved
+dat[dat$sampleid == "ARR1",]$lat <-
+  ifelse(
+    dat[dat$sampleid == "ARR1",]$Date >="2019-10-18",
+    33.7475234, # New location 
+    33.743923   # old location 
+  )
+dat[dat$sampleid == "ARR1",]$long <-
+  ifelse(
+    dat[dat$sampleid == "ARR1",]$Date >="2019-10-18",
+    -90.439047, # New location 
+    -90.434174   # old location 
+  )
+
+dat[dat$sampleid == "ARR2",]$lat <-
+  ifelse(
+    dat[dat$sampleid == "ARR2",]$Date >="2019-10-18",
+    33.747566, # New location 
+    33.7439064   # old location 
+  )
+dat[dat$sampleid == "ARR2",]$long <-
+  ifelse(
+    dat[dat$sampleid == "ARR2",]$Date >="2019-10-18",
+    -90.441001, # New location 
+    -90.431302   # old location 
+  )
+
+dat[dat$sampleid == "STU1",]$lat <-
+  ifelse(
+    dat[dat$sampleid == "STU1",]$Date >="2019-12-5",
+    33.8177149, # New location 
+    33.7921411   # old location 
+  )
+dat[dat$sampleid == "STU1",]$long <-
+  ifelse(
+    dat[dat$sampleid == "STU1",]$Date >="2019-12-5",
+    -90.252741, # New location 
+    -90.267364   # old location 
+  )
+
+dat[dat$sampleid == "STU2",]$lat <-
+  ifelse(
+    dat[dat$sampleid == "STU2",]$Date >="2019-12-5",
+    33.8194787, # New location 
+    33.7955973   # old location 
+  )
+dat[dat$sampleid == "STU2",]$long <-
+  ifelse(
+    dat[dat$sampleid == "STU2",]$Date >="2019-12-5",
+    -90.258794, # New location 
+    -90.272795   # old location 
+  )
+
+
+specify_decimal <- function(x, k) trimws(format(round(x, k), nsmall=k))
+dat$lat <- specify_decimal(dat$lat, 7)
+dat$long <- specify_decimal(dat$long, 7)
+
+# LOGIC CHECK -------------------------------------------------------------
+
+# Here the standard columns are checked and any data from dates where the 
+# standards didn't meet QAQC objectives are removed.
+
+# First, replace concentration data on bad dates
+# list of columns that have concentration data
+conc <- c(10,11,13:15,17,19,21,23,25,27,31:39)
+  
+# This basically says, "For all the columns with concentration data, if the 
+# QAQC for the day was bad, set the concentration data to 'NA', if not, then
+# do not change it". All of the loops follow the same basic pattern.
+for (i in conc) {
+  dat[,i] <- ifelse(
+    dat[,2] == FALSE,
+    NA,
+    dat[,i]
+  )
+}
+
+# Then, replace concentration on individual dates
+# list of logical column numbers besides qaqc.check
+logic <- c(12, 16, 18, 20, 22, 24, 26)
+
+# Since the check columns are behind the columns they check, we can just change
+# the column before the logical one.
+for (i in logic) {
+  dat[,i - 1] <- ifelse(
+    dat[,i] == FALSE,
+    NA,
+    dat[,i - 1]
+  )
+}
+
+
+# replace NO3 values b/c they are tied to NOx check
+# we do this seperately b/c it doesn't fit the pattern of the for() loop above
+dat[,27] <- ifelse(
+  dat[,24] == FALSE,
+  NA,
+  dat[,27]
+)
+
+# Next we replace data in the loads columns. Since they are spaced differently,
+# it has to be done in 3 different loops.
+
+# replace tss loads
+for (i in c(21, 24, 27)) { 
+  dat[,10 + i] <- ifelse(
+    is.na(dat[,10]) == TRUE,
+    NA,
+    dat[,10 + i]
+  )
+}
+
+# replace tn loads
+for (i in c(17, 20, 23)) { 
+  dat[,15 + i] <- ifelse(
+    is.na(dat[,15]) == TRUE,
+    NA,
+    dat[,15 + i]
+  )
+}
+
+# replace tip loads
+for (i in c(16, 19, 22)) { 
+  dat[,17 + i] <- ifelse(
+    is.na(dat[,17]) == TRUE,
+    NA,
+    dat[,17 + i]
+  )
+}
+
+# Finally, we remove the columns that have the logical checks (because I
+# the rest of the code relies on absolute places in the dataframe).
+# remove logical columns
+dat <- dat %>% 
+  select(-c(2, 12, 16, 18, 20, 22, 24, 26))
+
+rm(conc, i, logic)
+
+
+# Impute missing values ---------------------------------------------------
+#dat <- dat %>%
+#  mutate(
+#    farm = as.character(farm),
+#    treatment = as.character(treatment)
+#  )
+#
+#dat$treatment <-
+#  ifelse(
+#    is.na(dat$treatment),
+#    "INST",
+#    dat$treatment
+#  )
+#dat$farm <-
+#  ifelse(
+#    is.na(dat$farm),
+#    "INST",
+#    dat$farm
+#  )
+#
+#dat <- mutate(
+#  dat,
+#  farm = as.factor(farm),
+#  treatment = as.factor(treatment)
+#)
+#
+# ..Sediment ---------------------------
+
+impdat <-
+  mice(
+    data = dat[,c(9, 10, 14)],
+    m = 5,
+    maxit = 50,
+    method = 'pmm',
+    seed = 1234,
+    printFlag = FALSE
+  )
+
+set.seed(1234)  # set seed for random imputed dataset selection
+compdat <- complete(impdat, round(runif(1, 1, 5), 0))
+# randomly select imputed dataset and combine with complete dataset
+
+# inspect imputed data
+# imputed datasets in magenta; observed in blue. are values plausible?
+#stripplot(impdat)
+# do imputed points fall in likely area of distrib.?
+
+dat[,c(9, 10, 14)] <- compdat[,1:ncol(compdat)]
+
+# ..Ortho P -------------------------
+
+
+impdat <-
+  mice(
+    data = dat[,c(14, 16)],
+    m = 5,
+    maxit = 50,
+    method = 'pmm',
+    seed = 1234,
+    printFlag = FALSE
+  )
+
+set.seed(1234)  # set seed for random imputed dataset selection
+compdat <- complete(impdat, round(runif(1, 1, 5), 0))
+# randomly select imputed dataset and combine with complete dataset
+
+# inspect imputed data
+# imputed datasets in magenta; observed in blue. are values plausible?
+# stripplot(impdat)
+# do imputed points fall in likely area of distrib.?
+
+dat[,c(14, 16)] <- compdat[,1:ncol(compdat)]
+
+# ..Nitrogen ------------------------------------
+
+impdat <-
+  mice(
+    data = dat[,c(11:13, 15, 17)],
+    m = 5,
+    maxit = 50,
+    method = 'pmm',
+    seed = 1234,
+    printFlag = FALSE
+  )
+
+set.seed(1234)  # set seed for random imputed dataset selection
+compdat <- complete(impdat, round(runif(1, 1, 5), 0))
+# randomly select imputed dataset and combine with complete dataset
+
+# inspect imputed data
+# imputed datasets in magenta; observed in blue. are values plausible?
+#stripplot(impdat)
+# do imputed points fall in likely area of distrib.?
+
+dat[,c(11:13, 15, 17)] <- compdat[,1:ncol(compdat)]
+
+# ..No3 -----------------------------------
+
+impdat <-
+  mice(
+    data = dat[,c(11:13, 15, 19)],
+    m = 5,
+    maxit = 50,
+    method = 'pmm',
+    seed = 1234,
+    printFlag = FALSE
+  )
+
+set.seed(1234)  # set seed for random imputed dataset selection
+compdat <- complete(impdat, round(runif(1, 1, 5), 0))
+# randomly select imputed dataset and combine with complete dataset
+
+# inspect imputed data
+# imputed datasets in magenta; observed in blue. are values plausible?
+#stripplot(impdat)
+# do imputed points fall in likely area of distrib.?
+
+dat[,c(11:13, 15, 19)] <- compdat[,1:ncol(compdat)]
+
+rm(impdat)
+rm(compdat)
+
+# repair MDLs -------------------------------------------------------------
+if (sum(dat$TSS.mgl < 5, na.rm = TRUE) / sum(!is.na(dat$TSS.mgl)) < 0.05) {
+  print("Less than 5% of TSS values are below MDL")
+  print(sum(dat$TSS.mgl < 5, na.rm = TRUE) / sum(!is.na(dat$TSS.mgl)) *100)
+  dat <- dat %>% mutate(TSS.mgl = replace(TSS.mgl, TSS.mgl < 5, 5/2))
+} else {
+  print("More than 5% of TSS values are below MDL and")
+  print("the values have remained unchanged")
+  print(dat %>% count(TSS.mgl < 5))
+  print(sum(dat$TSS.mgl < 5, na.rm = TRUE) / sum(!is.na(dat$TSS.mgl)) *100)}
+
+
+if (sum(dat$TUR.ntu < .02, na.rm = TRUE) / sum(!is.na(dat$TUR.ntu)) < 0.05) {
+  print("Less than 5% of TUR values are below MDL")
+  print(sum(dat$TUR.ntu < .02, na.rm = TRUE) / sum(!is.na(dat$TUR.ntu)) *100)
+  dat <- dat %>% mutate(TUR.ntu = replace(TUR.ntu, TUR.ntu < .02, .02/2))
+} else {
+  print("More than 5% of TUR values are below MDL and")
+  print("the values have remained unchanged")
+  print(dat %>% count(TUR.ntu < .02))
+  print(sum(dat$TUR.ntu < .02, na.rm = TRUE) / sum(!is.na(dat$TUR.ntu)) *100)}
+
+
+if (sum(dat$NO3.NO2.mgl < .23, na.rm = TRUE) / sum(!is.na(dat$NO3.NO2.mgl)) < 0.05) {
+  print("Less than 5% of NO3.NO2 values are below MDL")
+  print(sum(dat$NO3.NO2.mgl < .23, na.rm = TRUE) / sum(!is.na(dat$NO3.NO2.mgl)) *100)
+  dat <- dat %>% mutate(NO3.NO2.mgl = replace(NO3.NO2.mgl, NO3.NO2.mgl < .23, .23/2))
+} else {
+  print("More than 5% of NO3.NO2 values are below MDL and")
+  print("the values have remained unchanged")
+  print(dat %>% count(NO3.NO2.mgl < .23))
+  print(sum(dat$NO3.NO2.mgl < .23, na.rm = TRUE) / sum(!is.na(dat$NO3.NO2.mgl)) *100)}
+
+
+if (sum(dat$TKN.mgl < .77, na.rm = TRUE) / sum(!is.na(dat$TKN.mgl)) < 0.05) {
+  print("Less than 5% of TKN values are below MDL")
+  print(sum(dat$TKN.mgl < .77, na.rm = TRUE) / sum(!is.na(dat$TKN.mgl)) *100)
+  dat <- dat %>% mutate(TKN.mgl = replace(TKN.mgl, TKN.mgl < .77, .77/2))
+} else {
+  print("More than 5% of TKN values are below MDL and")
+  print("the values have remained unchanged")
+  print(dat %>% count(TKN.mgl < .77))
+  print(sum(dat$TKN.mgl < .77, na.rm = TRUE) / sum(!is.na(dat$TKN.mgl)) * 100)
+  }
+
+
+if (sum(dat$TN.mgl < 1, na.rm = TRUE) / sum(!is.na(dat$TN.mgl)) < 0.05) {
+  print("Less than 5% of TN values are below MDL")
+  print(sum(dat$TN.mgl < 1, na.rm = TRUE) / sum(!is.na(dat$TN.mgl)) *100)
+  dat <- dat %>% mutate(TN.mgl = replace(TN.mgl, TN.mgl < 1, 1/2))
+} else {
+  print("More than 5% of TN values are below MDL and")
+  print("the values have remained unchanged")
+  print(dat %>% count(TN.mgl < 1))
+  print(sum(dat$TN.mgl < 1, na.rm = TRUE) / sum(!is.na(dat$TN.mgl)) *100)
+  }
+
+
+if (sum(dat$TIP.mgl < .05, na.rm = TRUE) / sum(!is.na(dat$TIP.mgl)) < 0.05) {
+  print("Less than 5% of TIP values are below MDL")
+  print(sum(dat$TIP.mgl < .05, na.rm = TRUE) / sum(!is.na(dat$TIP.mgl)) *100)
+  dat <- dat %>% mutate(TIP.mgl = replace(TIP.mgl, TIP.mgl < .05, .05/2))
+} else {
+  print("More than 5% of TIP values are below MDL and")
+  print("the values have remained unchanged")
+  print(dat %>% count(TIP.mgl < .05))
+  print(sum(dat$TIP.mgl < .05, na.rm = TRUE) / sum(!is.na(dat$TIP.mgl)) *100)}
+
+
+if (sum(dat$NH3.mgl < .01, na.rm = TRUE) / sum(!is.na(dat$NH3.mgl)) < 0.05) {
+  print("Less than 5% of NH3 values are below MDL")
+  print(sum(dat$NH3.mgl < .01, na.rm = TRUE) / sum(!is.na(dat$NH3.mgl)) *100)
+  dat <- dat %>% mutate(NH3.mgl = replace(NH3.mgl, NH3.mgl < .01, .01/2))
+} else {
+  print("More than 5% of NH3 values are below MDL and")
+  print("the values have remained unchanged")
+  print(dat %>% count(NH3.mgl < .01))
+  print(sum(dat$NH3.mgl < .01, na.rm = TRUE) / sum(!is.na(dat$NH3.mgl)) *100)}
+
+
+if (sum(dat$OrthoP.mgl < .01, na.rm = TRUE) / sum(!is.na(dat$OrthoP.mgl)) < 0.05) {
+  print("Less than 5% of Ortho Phosphorus values are below MDL")
+  print(sum(dat$OrthoP.mgl < .01, na.rm = TRUE) / sum(!is.na(dat$OrthoP.mgl)) *100)
+  dat <- dat %>% mutate(OrthoP.mgl = replace(OrthoP.mgl, OrthoP.mgl < .01, .01/2))
+} else {
+  print("More than 5% of Ortho Phosphorus values are below MDL and")
+  print("the values have remained unchanged")
+  print(dat %>% count(OrthoP.mgl < .01))
+  print(sum(dat$OrthoP.mgl < .01, na.rm = TRUE) / sum(!is.na(dat$OrthoP.mgl)) *100)}
+
+
+if (sum(dat$NOx.mgl < .007, na.rm = TRUE) / sum(!is.na(dat$NOx.mgl)) < 0.05) {
+  print("Less than 5% of NOx values are below MDL")
+  print(sum(dat$NOx.mgl < .007, na.rm = TRUE) / sum(!is.na(dat$NOx.mgl)) *100)
+  dat <- dat %>% mutate(NOx.mgl = replace(NOx.mgl, NOx.mgl < .007, .007/2))
+} else {
+  print("More than 5% of NOx values are below MDL and")
+  print("the values have remained unchanged")
+  print(dat %>% count(NOx.mgl < .007))
+  print(sum(dat$NOx.mgl < .007, na.rm = TRUE) / sum(!is.na(dat$NOx.mgl)) *100)}
+
+
+if (sum(dat$NO2.mgl < .05, na.rm = TRUE) / sum(!is.na(dat$NO2.mgl)) < 0.05) {
+  print("Less than 5% of NO2 values are below MDL")
+  print(sum(dat$NO2.mgl < .05, na.rm = TRUE) / sum(!is.na(dat$NO2.mgl)) *100)
+  dat <- dat %>% mutate(NO2.mgl = replace(NO2.mgl, NO2.mgl < .05, .05/2))
+} else {
+  print("More than 5% of NO2 values are below MDL and")
+  print("the values have remained unchanged")
+  print(dat %>% count(NO2.mgl < .05))
+  print(sum(dat$NO2.mgl < .05, na.rm = TRUE) / sum(!is.na(dat$NO2.mgl)) *100)}
+
+
+if (sum(dat$NO3.mgl < .0007, na.rm = TRUE) / sum(!is.na(dat$NO3.mgl)) < 0.05) {
+  print("Less than 5% of NO3 values are below MDL")
+  print(sum(dat$NO3.mgl < .0007, na.rm = TRUE) / sum(!is.na(dat$NO3.mgl)) *100)
+  dat <- dat %>% mutate(NO3.mgl = replace(NO3.mgl, NO3.mgl < .0007, .0007/2))
+} else {
+  print("More than 5% of NO3 values are below MDL and")
+  print("the values have remained unchanged")
+  print(dat %>% count(NO3.mgl < .0007))
+  print(sum(dat$NO3.mgl < .0007, na.rm = TRUE) / sum(!is.na(dat$NO3.mgl)) *100)}
+
+#another round of imput for ammonia and tkn
+#NH3 ---------------
+
+dat$NH3.mgl <-
+  ifelse(
+    dat$NH3.mgl < .01,
+    NA,
+    dat$NH3.mgl
+  )
+
+impdat <-
+  mice(
+    data = dat[,c(11:13, 15, 17)],
+    m = 5,
+    maxit = 50,
+    method = 'pmm',
+    seed = 1234,
+    printFlag = FALSE
+  )
+
+set.seed(1234)  # set seed for random imputed dataset selection
+compdat <- complete(impdat, round(runif(1, 1, 5), 0))
+# randomly select imputed dataset and combine with complete dataset
+
+# inspect imputed data
+# imputed datasets in magenta; observed in blue. are values plausible?
+#stripplot(impdat)
+# do imputed points fall in likely area of distrib.?
+
+dat[,c(11:13, 15, 17)] <- compdat[,1:ncol(compdat)]
+
+# TKN-------------------
+print(
+  paste(
+    sum(dat$TKN.mgl < 0, na.rm = TRUE) / sum(!is.na(dat$TKN.mgl)) *100,
+    "% of TKN values are below 0"
+  )
+)
+
+
+dat$TKN.mgl <-
+  ifelse(
+    dat$TKN.mgl < 0,
+    NA,
+    dat$TKN.mgl
+  )
+
+summary(dat$TKN.mgl)
+
+impdat <-
+  mice(
+    data = dat[,c(11:13, 15, 17)],
+    m = 5,
+    maxit = 50,
+    method = 'pmm',
+    seed = 1234,
+    printFlag = FALSE
+  )
+
+set.seed(1234)  # set seed for random imputed dataset selection
+compdat <- complete(impdat, round(runif(1, 1, 5), 0))
+# randomly select imputed dataset and combine with complete dataset
+
+# inspect imputed data
+# imputed datasets in magenta; observed in blue. are values plausible?
+#stripplot(impdat)
+# do imputed points fall in likely area of distrib.?
+
+dat[,c(11:13, 15, 17)] <- compdat[,1:ncol(compdat)]
+
+
+
+```
+
+```{r, echo= FALSE, message= FALSE, warning= FALSE}
+INST <- dat[dat$sample.type== "INST",]%>% 
+  rename(LOCCODE = sampleid,
+         TSS= TSS.mgl,
+         TUR = TUR.ntu,
+         NN = NO3.NO2.mgl,
+         TKN= TKN.mgl,
+         TN = TN.mgl,
+         TIP = TIP.mgl,
+         NH3 = NH3.mgl,
+         DIP = OrthoP.mgl
+         )
+
+oldINST <- read.csv("combinedgrabs.csv") %>% 
+ rename(Date = 1,
+        TUR = 13)  %>% 
+  mutate(
+         Date = lubridate::mdy(Date),
+         Alk = as.numeric(Alk),
+         NH3 = as.numeric(NH3),
+         TSS = as.numeric(TSS),
+         NN = as.numeric(NN),
+         TP = as.numeric(TP),
+         TN = as.numeric(TN),
+         OrgN = as.numeric(OrgN),
+         TOC = as.numeric(TOC),
+         COD = as.numeric(COD),
+         Cl = as.numeric(Cl),
+         TKN = as.numeric(TKN)
+         )
+  
+test <- full_join(INST, oldINST)
+test <- test[,-c(4:8, 20:31, 39:41)]
+test$LOCCODE <- as.factor(test$LOCCODE)
+
+
+attach(test)
+oldharris <- test[LOCCODE== "HN3"|LOCCODE== "HN4"|LOCCODE== "HN5"
+                 |LOCCODE== "HN6"|LOCCODE== "HNO"|LOCCODE== "HNSTA"
+                 |LOCCODE== "HNT"|LOCCODE== "HS1"|LOCCODE== "HS2",]
+
+oldporter <- test[LOCCODE== "PN1"|LOCCODE== "PN2"|LOCCODE== "PS1"|
+                  LOCCODE== "PS2"|LOCCODE== "PS3"|LOCCODE== "PS4"|
+                  LOCCODE== "PS5"|LOCCODE== "PS6",]
+detach(test)
+
+```
+
+\newpage
+
+# TURBIDITY
+
+## Harris Bayou
+
+### Historical Harris Bayou sites
+
+```{r, warning= FALSE, echo=FALSE}
+summarise(oldharris, n = count(!is.na(oldharris$TUR)), Mean= mean(TUR, na.rm=TRUE), Median= median(TUR, na.rm = TRUE))
+```
+
+### Data from Harris Bayou site associated with the original Delta FARM project
+
+```{r, echo=FALSE}
+test %>% 
+  filter(LOCCODE =="HB") %>% 
+summarise(n= count(!is.na(TUR)),
+          Mean= mean(TUR, na.rm= TRUE),
+          Median= median(TUR, na.rm = TRUE))
+```
+
+### Plot the data points. Red is our recent data.
+
+```{r fig1, results='hold', warning=FALSE, echo= FALSE, fig.height= 3 }
+ggplot()+
+  geom_jitter(data= oldharris, aes(y= TUR, x= LOCCODE))+
+  geom_jitter(data= test[test$LOCCODE == "HB",], aes(y= TUR, x= LOCCODE, color= "red"))+
+  theme(legend.position = "none")
+  
+```
+
+```{r fig2, warning=FALSE, fig.height= 3, echo= FALSE}
+a <- ggplot()+
+  geom_boxplot(data= oldharris, aes(y= TUR, x= LOCCODE))+
+  geom_boxplot(data= test[test$LOCCODE == "HB",], aes(y= TUR, x= LOCCODE, color= "red"))+
+  theme(legend.position = "none", axis.text.x = element_text(angle = 45))
+b <- ggplot()+
+  geom_boxplot(data= test[test$LOCCODE == "HB",], aes(y= TUR, x= LOCCODE, color= "red"))+
+  geom_boxplot(data= oldharris, aes(y= TUR))+
+  theme(legend.position = "none", axis.title.y = element_blank())
+
+a+b
+```
+
+\newpage
+
+### Test for a difference in means
+
+```{r}
+wilcox.test(y= oldharris$TUR, x= test[test$LOCCODE == "HB", "TUR"], alternative = "less")
+```
+
+> Small P-value here indicates that we can reject the null hypothesis that the difference is not less than zero and conclude, at a %95 confidence level, that the values of our recent data is in fact lower than the historical data.
+
+### Percent reduction in the median value
+```{r}
+x <- median(oldharris$TUR, na.rm= TRUE)
+y <- median(test[test$LOCCODE == "HB", "TUR"])
+(y-x)/x * 100
+
+```
+ 
+ > Here we would use median values because there are outliers and apparent skewness from the boxplot. The mean reduction is even greater (%72).
+
+\newpage
+
+# TURBIDITY
+
+## Porter Bayou
+
+### Historical Porter Bayou sites
+
+```{r, warning= FALSE, echo=FALSE}
+summarise(oldporter, n = count(!is.na(oldporter$TUR)), Mean= mean(TUR, na.rm=TRUE), Median= median(TUR, na.rm = TRUE))
+```
+
+### Data from Porter Bayou site associated with the original Delta FARM project
+
+```{r, echo=FALSE}
+test %>% 
+  filter(LOCCODE =="PB") %>% 
+summarise(n= count(!is.na(TUR)),
+          Mean= mean(TUR, na.rm= TRUE), 
+          Median= median(TUR, na.rm = TRUE))
+```
+
+### Plot the data points. Red is our recent data.
+
+```{r fig3, results='hold', warning=FALSE, echo= FALSE, fig.height= 3}
+ggplot()+
+  geom_jitter(data= oldporter, aes(y= TUR, x= LOCCODE))+
+  geom_jitter(data= test[test$LOCCODE == "PB",], aes(y= TUR, x= LOCCODE, color= "red"))+
+  theme(legend.position = "none")
+  
+```
+
+```{r fig4, warning=FALSE, fig.height=3, echo= FALSE}
+a <- ggplot()+
+  geom_boxplot(data= oldporter, aes(y= TUR, x= LOCCODE))+
+  geom_boxplot(data= test[test$LOCCODE == "PB",], aes(y= TUR, x= LOCCODE, color= "red"))+
+  theme(legend.position = "none", axis.text.x = element_text(angle = 45))
+b <- ggplot()+
+  geom_boxplot(data= test[test$LOCCODE == "PB",], aes(y= TUR, x= LOCCODE, color= "red"))+
+  geom_boxplot(data= oldporter, aes(y= TUR))+
+  theme(legend.position = "none", axis.title.y = element_blank())
+
+a+b
+```
+
+\newpage
+
+### Test for a difference in means
+
+```{r}
+wilcox.test(y= oldporter$TUR, x= test[test$LOCCODE == "PB", "TUR"], alternative = "greater")
+```
+
+> Small P-value here indicates that we can reject the null hypothesis that the difference is not greater than zero and conclude, at a %95 confidence level, that the values of our recent data is in fact higher than the historical data.
+
+### Percent reduction in the median value
+
+```{r}
+x <- median(oldporter$TUR, na.rm= TRUE)
+y <- median(test[test$LOCCODE == "PB", "TUR"])
+(y-x)/x * 100
+
+```
+ 
+ > Here we would use median values because there are outliers and apparent skewness from the boxplot. Postive values represents increase.
+
+\newpage
+
+# TOTAL SUSPENDED SOLIDS
+
+## Harris Bayou
+
+### Historical Harris Bayou sites
+
+```{r, warning= FALSE, echo=FALSE}
+summarise(oldharris, n = count(!is.na(oldharris$TSS)), Mean= mean(TSS, na.rm=TRUE), Median= median(TSS, na.rm = TRUE))
+```
+
+### Data from Harris Bayou site associated with the original Delta FARM project
+
+```{r, echo=FALSE}
+test %>% 
+  filter(LOCCODE =="HB") %>% 
+summarise(n= count(!is.na(TSS)),
+          Mean= mean(TSS, na.rm= TRUE),
+          Median= median(TSS, na.rm = TRUE))
+```
+
+### Plot the data points. Red is our recent data.
+
+```{r fig5, results='hold', warning=FALSE, echo= FALSE, fig.height= 3 }
+ggplot()+
+  geom_jitter(data= oldharris, aes(y= TSS, x= LOCCODE))+
+  geom_jitter(data= test[test$LOCCODE == "HB",], aes(y= TSS, x= LOCCODE, color= "red"))+
+  theme(legend.position = "none")
+  
+```
+
+```{r fig6, warning=FALSE, fig.height= 3, echo= FALSE}
+a <- ggplot()+
+  geom_boxplot(data= oldharris, aes(y= TSS, x= LOCCODE))+
+  geom_boxplot(data= test[test$LOCCODE == "HB",], aes(y= TSS, x= LOCCODE, color= "red"))+
+  theme(legend.position = "none", axis.text.x = element_text(angle = 45))
+b <- ggplot()+
+  geom_boxplot(data= test[test$LOCCODE == "HB",], aes(y= TSS, x= LOCCODE, color= "red"))+
+  geom_boxplot(data= oldharris, aes(y= TSS))+
+  theme(legend.position = "none", axis.title.y = element_blank())
+
+a+b
+```
+
+\newpage
+
+### Test for a difference in means
+
+```{r}
+wilcox.test(y= oldharris$TSS, x= test[test$LOCCODE == "HB", "TSS"], alternative = "less")
+```
+
+> P value of less than alpha = 0.05 means we can conclude the alternative hypothesis. 
+
+### Percent reduction in the median value
+```{r}
+x <- median(oldharris$TSS, na.rm= TRUE)
+y <- median(test[test$LOCCODE == "HB", "TSS"])
+(y-x)/x * 100
+
+```
+ 
+ > 
+
+\newpage
+
+# TOTAL SUSPENDED SOLIDS
+
+## Porter Bayou
+
+### Historical Porter Bayou sites
+
+```{r, warning= FALSE, echo=FALSE}
+summarise(oldporter, n = count(!is.na(oldporter$TSS)), Mean= mean(TSS, na.rm=TRUE), Median= median(TSS, na.rm = TRUE))
+```
+
+### Data from Porter Bayou site associated with the original Delta FARM project
+
+```{r, echo=FALSE}
+test %>% 
+  filter(LOCCODE =="PB") %>% 
+summarise(n= count(!is.na(TSS)),
+          Mean= mean(TSS, na.rm= TRUE), 
+          Median= median(TSS, na.rm = TRUE))
+```
+
+### Plot the data points. Red is our recent data.
+
+```{r fig7, results='hold', warning=FALSE, echo= FALSE, fig.height= 3}
+ggplot()+
+  geom_jitter(data= oldporter, aes(y= TSS, x= LOCCODE))+
+  geom_jitter(data= test[test$LOCCODE == "PB",], aes(y= TSS, x= LOCCODE, color= "red"))+
+  theme(legend.position = "none")+
+  coord_cartesian(ylim = c(0,2500))
+```
+
+```{r fig8, warning=FALSE, fig.height=3, echo= FALSE}
+a <- ggplot()+
+  geom_boxplot(data= oldporter, aes(y= TSS, x= LOCCODE))+
+  geom_boxplot(data= test[test$LOCCODE == "PB",], aes(y= TSS, x= LOCCODE, color= "red"))+
+  theme(legend.position = "none", axis.text.x = element_text(angle = 45))+
+    coord_cartesian(ylim = c(0,2500))
+
+b <- ggplot()+
+  geom_boxplot(data= test[test$LOCCODE == "PB",], aes(y= TSS, x= LOCCODE, color= "red"))+
+  geom_boxplot(data= oldporter, aes(y= TSS))+
+  theme(legend.position = "none", axis.title.y = element_blank())+
+    coord_cartesian(ylim = c(0,2500))
+
+
+a+b
+```
+  * some outliers clipped from visualization
+  
+\newpage
+
+### Test for a difference in means
+
+```{r}
+wilcox.test(y= oldporter$TSS, x= test[test$LOCCODE == "PB", "TSS"], alternative = "greater")
+```
+
+> The test lends statistical significance to old porter bayou data values being less than what we recently collected.
+
+### Percent reduction in the median value
+
+```{r}
+x <- median(oldporter$TSS, na.rm= TRUE)
+y <- median(test[test$LOCCODE == "PB", "TSS"])
+(y-x)/x * 100
+
+```
+ 
+ >This positive number represents a four fold increase from values formally observed in porter bayou.
+
+\newpage
+
+# TOTAL NITROGEN
+
+## Harris Bayou
+
+### Historical Harris Bayou sites
+
+```{r, warning= FALSE, echo=FALSE}
+summarise(oldharris, n = count(!is.na(oldharris$TN)), Mean= mean(TN, na.rm=TRUE), Median= median(TN, na.rm = TRUE))
+```
+
+### Data from Harris Bayou site associated with the original Delta FARM project
+
+```{r, echo=FALSE}
+test %>% 
+  filter(LOCCODE =="HB") %>% 
+summarise(n= count(!is.na(TN)),
+          Mean= mean(TN, na.rm= TRUE),
+          Median= median(TN, na.rm = TRUE))
+```
+
+### Plot the data points. Red is our recent data.
+
+```{r fig9, results='hold', warning=FALSE, echo= FALSE, fig.height= 3 }
+ggplot()+
+  geom_jitter(data= oldharris, aes(y= TN, x= LOCCODE))+
+  geom_jitter(data= test[test$LOCCODE == "HB",], aes(y= TN, x= LOCCODE, color= "red"))+
+  theme(legend.position = "none")
+  
+```
+
+```{r fig10, warning=FALSE, fig.height= 3, echo= FALSE}
+a <- ggplot()+
+  geom_boxplot(data= oldharris, aes(y= TN, x= LOCCODE))+
+  geom_boxplot(data= test[test$LOCCODE == "HB",], aes(y= TN, x= LOCCODE, color= "red"))+
+  theme(legend.position = "none", axis.text.x = element_text(angle = 45))
+b <- ggplot()+
+  geom_boxplot(data= test[test$LOCCODE == "HB",], aes(y= TN, x= LOCCODE, color= "red"))+
+  geom_boxplot(data= oldharris, aes(y= TN))+
+  theme(legend.position = "none", axis.title.y = element_blank())
+
+a+b
+```
+
+\newpage
+
+### Test for a difference in means
+
+```{r}
+wilcox.test(y= oldharris$TN, x= test[test$LOCCODE == "HB", "TN"], alternative = "less")
+```
+
+>  Pvalue < alpha of 0.5: reject null that old values are <= new observations.                    Ha: new observations < old oberservations.
+
+### Percent reduction in the median value
+```{r}
+x <- median(oldharris$TN, na.rm= TRUE)
+y <- median(test[test$LOCCODE == "HB", "TN"])
+(y-x)/x * 100
+
+```
+ 
+ >  negative value represents a twenty percent reduction over the historical observations
+
+\newpage
+
+# TOTAL NITROGEN
+
+## Porter Bayou
+
+### Historical Porter Bayou sites
+
+```{r, warning= FALSE, echo=FALSE}
+summarise(oldporter, n = count(!is.na(oldporter$TN)), Mean= mean(TN, na.rm=TRUE), Median= median(TN, na.rm = TRUE))
+```
+
+### Data from Porter Bayou site associated with the original Delta FARM project
+
+```{r, echo=FALSE}
+test %>% 
+  filter(LOCCODE =="PB") %>% 
+summarise(n= count(!is.na(TN)),
+          Mean= mean(TN, na.rm= TRUE), 
+          Median= median(TN, na.rm = TRUE))
+```
+
+### Plot the data points. Red is our recent data.
+
+```{r fig11, results='hold', warning=FALSE, echo= FALSE, fig.height= 3}
+ggplot()+
+  geom_jitter(data= oldporter, aes(y= TN, x= LOCCODE))+
+  geom_jitter(data= test[test$LOCCODE == "PB",], aes(y= TN, x= LOCCODE, color= "red"))+
+  theme(legend.position = "none")
+  #coord_cartesian(ylim = c(0,2500))
+```
+
+```{r fig12, warning=FALSE, fig.height=3, echo= FALSE}
+a <- ggplot()+
+  geom_boxplot(data= oldporter, aes(y= TN, x= LOCCODE))+
+  geom_boxplot(data= test[test$LOCCODE == "PB",], aes(y= TN, x= LOCCODE, color= "red"))+
+  theme(legend.position = "none", axis.text.x = element_text(angle = 45))
+    #coord_cartesian(ylim = c(0,2500))
+
+b <- ggplot()+
+  geom_boxplot(data= test[test$LOCCODE == "PB",], aes(y= TN, x= LOCCODE, color= "red"))+
+  geom_boxplot(data= oldporter, aes(y= TN))+
+  theme(legend.position = "none", axis.title.y = element_blank())
+  #coord_cartesian(ylim = c(0,2500))
+
+
+a+b
+```
+
+\newpage
+
+### Test for a difference in means
+
+```{r}
+wilcox.test(y= oldporter$TN, x= test[test$LOCCODE == "PB", "TN"], alternative = "greater")
+```
+
+> Reject null that porter bayou TN concentrations are <= old observations. <b> Ha: new observations are greater than old ones.
+
+### Percent reduction in the median value
+
+```{r}
+x <- median(oldporter$TN, na.rm= TRUE)
+y <- median(test[test$LOCCODE == "PB", "TN"])
+(y-x)/x * 100
+
+```
+ 
+ > postive values represent increases
+
+
+
+
+
+
