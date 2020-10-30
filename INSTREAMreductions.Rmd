@@ -5,19 +5,15 @@ title: |
 
 author: "Mark Hill"
 date: "10/28/2020"
+documentclass: article
+
 output:
   pdf_document: 
-    toc: no
-    toc_depth: 3
+    toc: true
+    toc_depth: 2
   html_document: default
 ---
-\newpage
-\thispagestyle{empty}
-\mbox{}
 
-\tableofcontents
-
-\newpage
 
 
 ```{r setup, include=FALSE}
@@ -577,20 +573,20 @@ oldINST <- read.csv("combinedgrabs.csv") %>%
          TKN = as.numeric(TKN)
          )
   
-test <- full_join(INST, oldINST)
-test <- test[,-c(4:8, 20:31, 39:41)]
-test$LOCCODE <- as.factor(test$LOCCODE)
+instreamdata <- full_join(INST, oldINST)
+instreamdata <- instreamdata[,-c(4:8, 20:31, 39:41)]
+instreamdata$LOCCODE <- as.factor(instreamdata$LOCCODE)
 
 
-attach(test)
-oldharris <- test[LOCCODE== "HN3"|LOCCODE== "HN4"|LOCCODE== "HN5"
+attach(instreamdata)
+oldharris <- instreamdata[LOCCODE== "HN3"|LOCCODE== "HN4"|LOCCODE== "HN5"
                  |LOCCODE== "HN6"|LOCCODE== "HNO"|LOCCODE== "HNSTA"
                  |LOCCODE== "HNT"|LOCCODE== "HS1"|LOCCODE== "HS2",]
 
-oldporter <- test[LOCCODE== "PN1"|LOCCODE== "PN2"|LOCCODE== "PS1"|
+oldporter <- instreamdata[LOCCODE== "PN1"|LOCCODE== "PN2"|LOCCODE== "PS1"|
                   LOCCODE== "PS2"|LOCCODE== "PS3"|LOCCODE== "PS4"|
                   LOCCODE== "PS5"|LOCCODE== "PS6",]
-detach(test)
+detach(instreamdata)
 
 ```
 
@@ -609,19 +605,21 @@ summarise(oldharris, n = count(!is.na(oldharris$TUR)), Mean= mean(TUR, na.rm=TRU
 ### Data from Harris Bayou site associated with the original Delta FARM project
 
 ```{r, echo=FALSE}
-test %>% 
+instreamdata %>% 
   filter(LOCCODE =="HB") %>% 
 summarise(n= count(!is.na(TUR)),
           Mean= mean(TUR, na.rm= TRUE),
           Median= median(TUR, na.rm = TRUE))
 ```
 
-### Plot the data points. Red is our recent data.
+### Plot the data points. 
+
+Red is our recent data.
 
 ```{r fig1, results='hold', warning=FALSE, echo= FALSE, fig.height= 3 }
 ggplot()+
   geom_jitter(data= oldharris, aes(y= TUR, x= LOCCODE))+
-  geom_jitter(data= test[test$LOCCODE == "HB",], aes(y= TUR, x= LOCCODE, color= "red"))+
+  geom_jitter(data= instreamdata[instreamdata$LOCCODE == "HB",], aes(y= TUR, x= LOCCODE, color= "red"))+
   theme(legend.position = "none")
   
 ```
@@ -629,10 +627,10 @@ ggplot()+
 ```{r fig2, warning=FALSE, fig.height= 3, echo= FALSE}
 a <- ggplot()+
   geom_boxplot(data= oldharris, aes(y= TUR, x= LOCCODE))+
-  geom_boxplot(data= test[test$LOCCODE == "HB",], aes(y= TUR, x= LOCCODE, color= "red"))+
+  geom_boxplot(data= instreamdata[instreamdata$LOCCODE == "HB",], aes(y= TUR, x= LOCCODE, color= "red"))+
   theme(legend.position = "none", axis.text.x = element_text(angle = 45))
 b <- ggplot()+
-  geom_boxplot(data= test[test$LOCCODE == "HB",], aes(y= TUR, x= LOCCODE, color= "red"))+
+  geom_boxplot(data= instreamdata[instreamdata$LOCCODE == "HB",], aes(y= TUR, x= LOCCODE, color= "red"))+
   geom_boxplot(data= oldharris, aes(y= TUR))+
   theme(legend.position = "none", axis.title.y = element_blank())
 
@@ -644,24 +642,23 @@ a+b
 ### Test for a difference in means
 
 ```{r}
-wilcox.test(y= oldharris$TUR, x= test[test$LOCCODE == "HB", "TUR"], alternative = "less")
+wilcox.test(y= oldharris$TUR, x= instreamdata[instreamdata$LOCCODE == "HB", "TUR"],
+            alternative = "less")
 ```
 
-> Small P-value here indicates that we can reject the null hypothesis that the difference is not less than zero and conclude, at a %95 confidence level, that the values of our recent data is in fact lower than the historical data.
+Small P-value here indicates that we can reject the null hypothesis that the difference is not less than zero and conclude, at a %95 confidence level, that the values of our recent data is in fact lower than the historical data.
 
 ### Percent reduction in the median value
 ```{r}
 x <- median(oldharris$TUR, na.rm= TRUE)
-y <- median(test[test$LOCCODE == "HB", "TUR"])
+y <- median(instreamdata[instreamdata$LOCCODE == "HB", "TUR"])
 (y-x)/x * 100
 
 ```
  
- > Here we would use median values because there are outliers and apparent skewness from the boxplot. The mean reduction is even greater (%72).
+Here we would use median values because there are outliers and apparent skewness from the boxplot. The mean reduction is even greater (%72). Negative value represents a dcrease relative to the historical data.
 
 \newpage
-
-# TURBIDITY
 
 ## Porter Bayou
 
@@ -674,19 +671,21 @@ summarise(oldporter, n = count(!is.na(oldporter$TUR)), Mean= mean(TUR, na.rm=TRU
 ### Data from Porter Bayou site associated with the original Delta FARM project
 
 ```{r, echo=FALSE}
-test %>% 
+instreamdata %>% 
   filter(LOCCODE =="PB") %>% 
 summarise(n= count(!is.na(TUR)),
           Mean= mean(TUR, na.rm= TRUE), 
           Median= median(TUR, na.rm = TRUE))
 ```
 
-### Plot the data points. Red is our recent data.
+### Plot the data points.
+
+Red is our recent data.
 
 ```{r fig3, results='hold', warning=FALSE, echo= FALSE, fig.height= 3}
 ggplot()+
   geom_jitter(data= oldporter, aes(y= TUR, x= LOCCODE))+
-  geom_jitter(data= test[test$LOCCODE == "PB",], aes(y= TUR, x= LOCCODE, color= "red"))+
+  geom_jitter(data= instreamdata[instreamdata$LOCCODE == "PB",], aes(y= TUR, x= LOCCODE, color= "red"))+
   theme(legend.position = "none")
   
 ```
@@ -694,10 +693,10 @@ ggplot()+
 ```{r fig4, warning=FALSE, fig.height=3, echo= FALSE}
 a <- ggplot()+
   geom_boxplot(data= oldporter, aes(y= TUR, x= LOCCODE))+
-  geom_boxplot(data= test[test$LOCCODE == "PB",], aes(y= TUR, x= LOCCODE, color= "red"))+
+  geom_boxplot(data= instreamdata[instreamdata$LOCCODE == "PB",], aes(y= TUR, x= LOCCODE, color= "red"))+
   theme(legend.position = "none", axis.text.x = element_text(angle = 45))
 b <- ggplot()+
-  geom_boxplot(data= test[test$LOCCODE == "PB",], aes(y= TUR, x= LOCCODE, color= "red"))+
+  geom_boxplot(data= instreamdata[instreamdata$LOCCODE == "PB",], aes(y= TUR, x= LOCCODE, color= "red"))+
   geom_boxplot(data= oldporter, aes(y= TUR))+
   theme(legend.position = "none", axis.title.y = element_blank())
 
@@ -709,21 +708,24 @@ a+b
 ### Test for a difference in means
 
 ```{r}
-wilcox.test(y= oldporter$TUR, x= test[test$LOCCODE == "PB", "TUR"], alternative = "greater")
+wilcox.test(y= oldporter$TUR, x= instreamdata[instreamdata$LOCCODE == "PB", "TUR"],
+            alternative = "greater")
 ```
 
-> Small P-value here indicates that we can reject the null hypothesis that the difference is not greater than zero and conclude, at a %95 confidence level, that the values of our recent data is in fact higher than the historical data.
+Small P-value here indicates that we can reject the null hypothesis that the difference is not greater than zero and conclude, at a %95 confidence level, that the values of our recent data is in fact higher than the historical data.  
+$H_0:$ old data $\geq$ new data  
+$H_a:$ old data $<$ new data
 
 ### Percent reduction in the median value
 
 ```{r}
 x <- median(oldporter$TUR, na.rm= TRUE)
-y <- median(test[test$LOCCODE == "PB", "TUR"])
+y <- median(instreamdata[instreamdata$LOCCODE == "PB", "TUR"])
 (y-x)/x * 100
 
 ```
  
- > Here we would use median values because there are outliers and apparent skewness from the boxplot. Postive values represents increase.
+Here we would use median values because there are outliers and apparent skewness from the boxplot. Postive values represents a relative increase. This relative change can range from (-) 100% decrease to (+) infinite increase.
 
 \newpage
 
@@ -740,19 +742,21 @@ summarise(oldharris, n = count(!is.na(oldharris$TSS)), Mean= mean(TSS, na.rm=TRU
 ### Data from Harris Bayou site associated with the original Delta FARM project
 
 ```{r, echo=FALSE}
-test %>% 
+instreamdata %>% 
   filter(LOCCODE =="HB") %>% 
 summarise(n= count(!is.na(TSS)),
           Mean= mean(TSS, na.rm= TRUE),
           Median= median(TSS, na.rm = TRUE))
 ```
 
-### Plot the data points. Red is our recent data.
+### Plot the data points. 
+
+Red is our recent data.
 
 ```{r fig5, results='hold', warning=FALSE, echo= FALSE, fig.height= 3 }
 ggplot()+
   geom_jitter(data= oldharris, aes(y= TSS, x= LOCCODE))+
-  geom_jitter(data= test[test$LOCCODE == "HB",], aes(y= TSS, x= LOCCODE, color= "red"))+
+  geom_jitter(data= instreamdata[instreamdata$LOCCODE == "HB",], aes(y= TSS, x= LOCCODE, color= "red"))+
   theme(legend.position = "none")
   
 ```
@@ -760,10 +764,10 @@ ggplot()+
 ```{r fig6, warning=FALSE, fig.height= 3, echo= FALSE}
 a <- ggplot()+
   geom_boxplot(data= oldharris, aes(y= TSS, x= LOCCODE))+
-  geom_boxplot(data= test[test$LOCCODE == "HB",], aes(y= TSS, x= LOCCODE, color= "red"))+
+  geom_boxplot(data= instreamdata[instreamdata$LOCCODE == "HB",], aes(y= TSS, x= LOCCODE, color= "red"))+
   theme(legend.position = "none", axis.text.x = element_text(angle = 45))
 b <- ggplot()+
-  geom_boxplot(data= test[test$LOCCODE == "HB",], aes(y= TSS, x= LOCCODE, color= "red"))+
+  geom_boxplot(data= instreamdata[instreamdata$LOCCODE == "HB",], aes(y= TSS, x= LOCCODE, color= "red"))+
   geom_boxplot(data= oldharris, aes(y= TSS))+
   theme(legend.position = "none", axis.title.y = element_blank())
 
@@ -775,15 +779,17 @@ a+b
 ### Test for a difference in means
 
 ```{r}
-wilcox.test(y= oldharris$TSS, x= test[test$LOCCODE == "HB", "TSS"], alternative = "less")
+wilcox.test(y= oldharris$TSS, x= instreamdata[instreamdata$LOCCODE == "HB", "TSS"],
+            alternative = "less")
 ```
 
-> P value of less than alpha = 0.05 means we can conclude the alternative hypothesis. 
+P-value of less than alpha = 0.05 means we can conclude the alternative hypothesis. 
+$H_a:$ our recent samples had less total suspended solids than our historical observations
 
 ### Percent reduction in the median value
 ```{r}
 x <- median(oldharris$TSS, na.rm= TRUE)
-y <- median(test[test$LOCCODE == "HB", "TSS"])
+y <- median(instreamdata[instreamdata$LOCCODE == "HB", "TSS"])
 (y-x)/x * 100
 
 ```
@@ -791,8 +797,6 @@ y <- median(test[test$LOCCODE == "HB", "TSS"])
  > 
 
 \newpage
-
-# TOTAL SUSPENDED SOLIDS
 
 ## Porter Bayou
 
@@ -805,19 +809,21 @@ summarise(oldporter, n = count(!is.na(oldporter$TSS)), Mean= mean(TSS, na.rm=TRU
 ### Data from Porter Bayou site associated with the original Delta FARM project
 
 ```{r, echo=FALSE}
-test %>% 
+instreamdata %>% 
   filter(LOCCODE =="PB") %>% 
 summarise(n= count(!is.na(TSS)),
           Mean= mean(TSS, na.rm= TRUE), 
           Median= median(TSS, na.rm = TRUE))
 ```
 
-### Plot the data points. Red is our recent data.
+### Plot the data points. 
+
+Red is our recent data.
 
 ```{r fig7, results='hold', warning=FALSE, echo= FALSE, fig.height= 3}
 ggplot()+
   geom_jitter(data= oldporter, aes(y= TSS, x= LOCCODE))+
-  geom_jitter(data= test[test$LOCCODE == "PB",], aes(y= TSS, x= LOCCODE, color= "red"))+
+  geom_jitter(data= instreamdata[instreamdata$LOCCODE == "PB",], aes(y= TSS, x= LOCCODE, color= "red"))+
   theme(legend.position = "none")+
   coord_cartesian(ylim = c(0,2500))
 ```
@@ -825,12 +831,12 @@ ggplot()+
 ```{r fig8, warning=FALSE, fig.height=3, echo= FALSE}
 a <- ggplot()+
   geom_boxplot(data= oldporter, aes(y= TSS, x= LOCCODE))+
-  geom_boxplot(data= test[test$LOCCODE == "PB",], aes(y= TSS, x= LOCCODE, color= "red"))+
+  geom_boxplot(data= instreamdata[instreamdata$LOCCODE == "PB",], aes(y= TSS, x= LOCCODE, color= "red"))+
   theme(legend.position = "none", axis.text.x = element_text(angle = 45))+
     coord_cartesian(ylim = c(0,2500))
 
 b <- ggplot()+
-  geom_boxplot(data= test[test$LOCCODE == "PB",], aes(y= TSS, x= LOCCODE, color= "red"))+
+  geom_boxplot(data= instreamdata[instreamdata$LOCCODE == "PB",], aes(y= TSS, x= LOCCODE, color= "red"))+
   geom_boxplot(data= oldporter, aes(y= TSS))+
   theme(legend.position = "none", axis.title.y = element_blank())+
     coord_cartesian(ylim = c(0,2500))
@@ -845,21 +851,22 @@ a+b
 ### Test for a difference in means
 
 ```{r}
-wilcox.test(y= oldporter$TSS, x= test[test$LOCCODE == "PB", "TSS"], alternative = "greater")
+wilcox.test(y= oldporter$TSS, x= instreamdata[instreamdata$LOCCODE == "PB", "TSS"],
+            alternative = "greater")
 ```
-
-> The test lends statistical significance to old porter bayou data values being less than what we recently collected.
+$H_a:$ new data is greater than the old data
+The test lends statistical significance to old porter bayou data values being less than what we recently collected.
 
 ### Percent reduction in the median value
 
 ```{r}
 x <- median(oldporter$TSS, na.rm= TRUE)
-y <- median(test[test$LOCCODE == "PB", "TSS"])
+y <- median(instreamdata[instreamdata$LOCCODE == "PB", "TSS"])
 (y-x)/x * 100
 
 ```
  
- >This positive number represents a four fold increase from values formally observed in porter bayou.
+ This positive number represents a four fold increase from values formerly observed in porter bayou.
 
 \newpage
 
@@ -876,19 +883,21 @@ summarise(oldharris, n = count(!is.na(oldharris$TN)), Mean= mean(TN, na.rm=TRUE)
 ### Data from Harris Bayou site associated with the original Delta FARM project
 
 ```{r, echo=FALSE}
-test %>% 
+instreamdata %>% 
   filter(LOCCODE =="HB") %>% 
 summarise(n= count(!is.na(TN)),
           Mean= mean(TN, na.rm= TRUE),
           Median= median(TN, na.rm = TRUE))
 ```
 
-### Plot the data points. Red is our recent data.
+### Plot the data points. 
+
+Red is our recent data.
 
 ```{r fig9, results='hold', warning=FALSE, echo= FALSE, fig.height= 3 }
 ggplot()+
   geom_jitter(data= oldharris, aes(y= TN, x= LOCCODE))+
-  geom_jitter(data= test[test$LOCCODE == "HB",], aes(y= TN, x= LOCCODE, color= "red"))+
+  geom_jitter(data= instreamdata[instreamdata$LOCCODE == "HB",], aes(y= TN, x= LOCCODE, color= "red"))+
   theme(legend.position = "none")
   
 ```
@@ -896,10 +905,10 @@ ggplot()+
 ```{r fig10, warning=FALSE, fig.height= 3, echo= FALSE}
 a <- ggplot()+
   geom_boxplot(data= oldharris, aes(y= TN, x= LOCCODE))+
-  geom_boxplot(data= test[test$LOCCODE == "HB",], aes(y= TN, x= LOCCODE, color= "red"))+
+  geom_boxplot(data= instreamdata[instreamdata$LOCCODE == "HB",], aes(y= TN, x= LOCCODE, color= "red"))+
   theme(legend.position = "none", axis.text.x = element_text(angle = 45))
 b <- ggplot()+
-  geom_boxplot(data= test[test$LOCCODE == "HB",], aes(y= TN, x= LOCCODE, color= "red"))+
+  geom_boxplot(data= instreamdata[instreamdata$LOCCODE == "HB",], aes(y= TN, x= LOCCODE, color= "red"))+
   geom_boxplot(data= oldharris, aes(y= TN))+
   theme(legend.position = "none", axis.title.y = element_blank())
 
@@ -911,24 +920,24 @@ a+b
 ### Test for a difference in means
 
 ```{r}
-wilcox.test(y= oldharris$TN, x= test[test$LOCCODE == "HB", "TN"], alternative = "less")
+wilcox.test(y= oldharris$TN, x= instreamdata[instreamdata$LOCCODE == "HB", "TN"],
+            alternative = "less")
 ```
 
->  Pvalue < alpha of 0.5: reject null that old values are <= new observations.                    Ha: new observations < old oberservations.
+P-value  $< \alpha =0.05:$ reject null that old values are $\leq$ new observations.  
+Ha: new observations < old observations.
 
 ### Percent reduction in the median value
 ```{r}
 x <- median(oldharris$TN, na.rm= TRUE)
-y <- median(test[test$LOCCODE == "HB", "TN"])
+y <- median(instreamdata[instreamdata$LOCCODE == "HB", "TN"])
 (y-x)/x * 100
 
 ```
  
- >  negative value represents a twenty percent reduction over the historical observations
+ Negative value here represents a twenty percent reduction over the historical observations.
 
 \newpage
-
-# TOTAL NITROGEN
 
 ## Porter Bayou
 
@@ -941,19 +950,21 @@ summarise(oldporter, n = count(!is.na(oldporter$TN)), Mean= mean(TN, na.rm=TRUE)
 ### Data from Porter Bayou site associated with the original Delta FARM project
 
 ```{r, echo=FALSE}
-test %>% 
+instreamdata %>% 
   filter(LOCCODE =="PB") %>% 
 summarise(n= count(!is.na(TN)),
           Mean= mean(TN, na.rm= TRUE), 
           Median= median(TN, na.rm = TRUE))
 ```
 
-### Plot the data points. Red is our recent data.
+### Plot the data points.
+
+Red is our recent data.
 
 ```{r fig11, results='hold', warning=FALSE, echo= FALSE, fig.height= 3}
 ggplot()+
   geom_jitter(data= oldporter, aes(y= TN, x= LOCCODE))+
-  geom_jitter(data= test[test$LOCCODE == "PB",], aes(y= TN, x= LOCCODE, color= "red"))+
+  geom_jitter(data= instreamdata[instreamdata$LOCCODE == "PB",], aes(y= TN, x= LOCCODE, color= "red"))+
   theme(legend.position = "none")
   #coord_cartesian(ylim = c(0,2500))
 ```
@@ -961,12 +972,12 @@ ggplot()+
 ```{r fig12, warning=FALSE, fig.height=3, echo= FALSE}
 a <- ggplot()+
   geom_boxplot(data= oldporter, aes(y= TN, x= LOCCODE))+
-  geom_boxplot(data= test[test$LOCCODE == "PB",], aes(y= TN, x= LOCCODE, color= "red"))+
+  geom_boxplot(data= instreamdata[instreamdata$LOCCODE == "PB",], aes(y= TN, x= LOCCODE, color= "red"))+
   theme(legend.position = "none", axis.text.x = element_text(angle = 45))
     #coord_cartesian(ylim = c(0,2500))
 
 b <- ggplot()+
-  geom_boxplot(data= test[test$LOCCODE == "PB",], aes(y= TN, x= LOCCODE, color= "red"))+
+  geom_boxplot(data= instreamdata[instreamdata$LOCCODE == "PB",], aes(y= TN, x= LOCCODE, color= "red"))+
   geom_boxplot(data= oldporter, aes(y= TN))+
   theme(legend.position = "none", axis.title.y = element_blank())
   #coord_cartesian(ylim = c(0,2500))
@@ -980,21 +991,22 @@ a+b
 ### Test for a difference in means
 
 ```{r}
-wilcox.test(y= oldporter$TN, x= test[test$LOCCODE == "PB", "TN"], alternative = "greater")
+wilcox.test(y= oldporter$TN, x= instreamdata[instreamdata$LOCCODE == "PB", "TN"],
+            alternative = "greater")
 ```
 
-> Reject null that porter bayou TN concentrations are <= old observations. <b> Ha: new observations are greater than old ones.
+Reject null hypothesis that porter bayou TN concentrations are $\leq$ old observations. <b> $H_a:$ new observations are greater than old ones.
 
 ### Percent reduction in the median value
 
 ```{r}
 x <- median(oldporter$TN, na.rm= TRUE)
-y <- median(test[test$LOCCODE == "PB", "TN"])
+y <- median(instreamdata[instreamdata$LOCCODE == "PB", "TN"])
 (y-x)/x * 100
 
 ```
  
- > postive values represent increases
+ This postive value represents an ncrease from the historical observations.
 
 
 
