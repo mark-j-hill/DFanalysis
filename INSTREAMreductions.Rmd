@@ -16,6 +16,7 @@ output:
   pdf_document: 
     toc: true
     toc_depth: 2
+  geometry: margin=2cm
   html_document: default
 ---
 
@@ -41,6 +42,8 @@ library(mosaicData)
 library(patchwork)
 library(mice)
 library(readxl)
+library(kableExtra)
+library(xtable)
 ```
 
 
@@ -653,19 +656,34 @@ a+b
 ```{r}
 wilcox.test(y= oldharris$TUR, x= instreamdata[instreamdata$LOCCODE == "HB", "TUR"],
             alternative = "less")
+
 ```
 
 P-value < $\alpha$ here indicates that we can reject the null hypothesis that the difference is not less than zero and conclude, at a %95 confidence level, that the values of our recent data is in fact lower than the historical data.  $\alpha = 0.05$ is used throughout.
+
+
 
 ### Percent reduction in the median value
 ```{r}
 x <- median(oldharris$TUR, na.rm= TRUE)
 y <- median(instreamdata[instreamdata$LOCCODE == "HB", "TUR"])
-(y-x)/x * 100
-
+z <- (y-x)/x * 100
+z
 ```
  
 Here we would use median values because there are outliers and apparent skewness from the boxplot. The mean reduction is even greater (%72). Negative value represents a decrease relative to the historical data.
+
+```{r, warning= FALSE, echo=FALSE}
+df <- data.frame("Method" = NA, "Analyte"= NA,"Location" = NA, "Alternative" = NA, "P.value" = NA, "relative.reduction"= NA)
+df$Location <- "Harris Bayou"
+df$Analyte <- "Turbidity"
+df$Method <- "Wilcox rank sum test"
+df$Alternative <- wilcox.test(y= oldharris$TUR, x= instreamdata[instreamdata$LOCCODE == "HB", "TUR"],
+            alternative = "less")$alternative
+df$P.value <- wilcox.test(y= oldharris$TUR, x= instreamdata[instreamdata$LOCCODE == "HB", "TUR"],
+            alternative = "less")$p.value
+df$relative.reduction <- z
+```
 
 \newpage
 
@@ -733,11 +751,24 @@ $H_a:$ old data $<$ new data
 ```{r}
 x <- median(oldporter$TUR, na.rm= TRUE)
 y <- median(instreamdata[instreamdata$LOCCODE == "PB", "TUR"])
-(y-x)/x * 100
-
+z <- (y-x)/x * 100
+z
 ```
  
-Here we would use median values because there are outliers and apparent skewness from the boxplot. Postive values represents a relative increase. This relative change can range from (-) 100% decrease to (+) infinite increase.
+Here we would use median values because there are outliers and apparent skewness from the boxplot. Positive values represents a relative increase. This relative change can range from (-) 100% decrease to (+) infinite increase.
+
+```{r, warning= FALSE, echo=FALSE}
+df <- rbind(df, list("Wilcox rank sum test",
+              "Turbidity",
+              "Porter Bayou", 
+            wilcox.test(y= oldporter$TUR, x= instreamdata[instreamdata$LOCCODE == "PB", "TUR"],
+              alternative = "greater")$alternative,
+            wilcox.test(y= oldporter$TUR, x= instreamdata[instreamdata$LOCCODE == "PB", "TUR"],
+              alternative = "greater")$p.value, z
+            )
+      )
+
+```
 
 \newpage
 
@@ -770,7 +801,7 @@ ggplot()+
   geom_jitter(data= oldharris, aes(y= TSS, x= LOCCODE))+
   geom_jitter(data= instreamdata[instreamdata$LOCCODE == "HB",], aes(y= TSS, x= LOCCODE, color= "red"))+
   theme(legend.position = "none")+
-  labs(x ="Location", y = "TSS (mg/L")
+  labs(x ="Location", y = "TSS (mg/L)")
   
 ```
 
@@ -779,12 +810,12 @@ a <- ggplot()+
   geom_boxplot(data= oldharris, aes(y= TSS, x= LOCCODE))+
   geom_boxplot(data= instreamdata[instreamdata$LOCCODE == "HB",], aes(y= TSS, x= LOCCODE, color= "red"))+
   theme(legend.position = "none", axis.text.x = element_text(angle = 45))+
-  labs(x ="Location", y = "TSS (mg/L")
+  labs(x ="Location", y = "TSS (mg/L)")
 b <- ggplot()+
   geom_boxplot(data= instreamdata[instreamdata$LOCCODE == "HB",], aes(y= TSS, x= LOCCODE, color= "red"))+
   geom_boxplot(data= oldharris, aes(y= TSS))+
   theme(legend.position = "none", axis.title.y = element_blank())+
-  labs(x ="Location", y = "TSS (mg/L")
+  labs(x ="Location", y = "TSS (mg/L)")
 
 a+b
 ```
@@ -805,7 +836,19 @@ $H_a:$ our recent samples had less total suspended solids than our historical ob
 ```{r}
 x <- median(oldharris$TSS, na.rm= TRUE)
 y <- median(instreamdata[instreamdata$LOCCODE == "HB", "TSS"])
-(y-x)/x * 100
+z <- (y-x)/x * 100
+z
+```
+```{r, warning= FALSE, echo=FALSE}
+df <- rbind(df, list("Wilcox rank sum test",
+              "Total Suspended Solids",
+              "Harris Bayou", 
+            wilcox.test(y= oldharris$TSS, x= instreamdata[instreamdata$LOCCODE == "HB", "TSS"],
+              alternative = "less")$alternative,
+            wilcox.test(y= oldharris$TSS, x= instreamdata[instreamdata$LOCCODE == "HB", "TSS"],
+              alternative = "less")$p.value, z
+            )
+      )
 
 ```
  
@@ -841,7 +884,7 @@ ggplot()+
   geom_jitter(data= instreamdata[instreamdata$LOCCODE == "PB",], aes(y= TSS, x= LOCCODE, color= "red"))+
   theme(legend.position = "none")+
   coord_cartesian(ylim = c(0,2500))+
-  labs(x ="Location", y = "TSS (mg/L")
+  labs(x ="Location", y = "TSS (mg/L)")
 ```
 
 ```{r fig8, warning=FALSE, fig.height=3, echo= FALSE}
@@ -850,14 +893,14 @@ a <- ggplot()+
   geom_boxplot(data= instreamdata[instreamdata$LOCCODE == "PB",], aes(y= TSS, x= LOCCODE, color= "red"))+
   theme(legend.position = "none", axis.text.x = element_text(angle = 45))+
   coord_cartesian(ylim = c(0,2500))+
-  labs(x ="Location", y = "TSS (mg/L")
+  labs(x ="Location", y = "TSS (mg/L)")
 
 b <- ggplot()+
   geom_boxplot(data= instreamdata[instreamdata$LOCCODE == "PB",], aes(y= TSS, x= LOCCODE, color= "red"))+
   geom_boxplot(data= oldporter, aes(y= TSS))+
   theme(legend.position = "none", axis.title.y = element_blank())+
   coord_cartesian(ylim = c(0,2500))+
-  labs(x ="Location", y = "TSS (mg/L")
+  labs(x ="Location", y = "TSS (mg/L)")
 
 
 a+b
@@ -880,12 +923,25 @@ The test lends statistical significance to old porter bayou data values being le
 ```{r}
 x <- median(oldporter$TSS, na.rm= TRUE)
 y <- median(instreamdata[instreamdata$LOCCODE == "PB", "TSS"])
-(y-x)/x * 100
+z <- (y-x)/x * 100
+z
+```
+ 
+This positive number represents a four fold increase from values formerly observed in porter bayou.
+
+```{r, warning= FALSE, echo=FALSE}
+df <- rbind(df, list("Wilcox rank sum test",
+              "Total Suspended Solids",
+              "Porter Bayou", 
+            wilcox.test(y= oldporter$TSS, x= instreamdata[instreamdata$LOCCODE == "PB", "TSS"],
+              alternative = "greater")$alternative,
+            wilcox.test(y= oldporter$TSS, x= instreamdata[instreamdata$LOCCODE == "PB", "TSS"],
+              alternative = "greater")$p.value, z
+            )
+      )
 
 ```
  
- This positive number represents a four fold increase from values formerly observed in porter bayou.
-
 \newpage
 
 # TOTAL NITROGEN
@@ -917,7 +973,7 @@ ggplot()+
   geom_jitter(data= oldharris, aes(y= TN, x= LOCCODE))+
   geom_jitter(data= instreamdata[instreamdata$LOCCODE == "HB",], aes(y= TN, x= LOCCODE, color= "red"))+
   theme(legend.position = "none")+
-  labs(x ="Location", y = "TN (mg/L")
+  labs(x ="Location", y = "TN (mg/L)")
   
 ```
 
@@ -926,12 +982,12 @@ a <- ggplot()+
   geom_boxplot(data= oldharris, aes(y= TN, x= LOCCODE))+
   geom_boxplot(data= instreamdata[instreamdata$LOCCODE == "HB",], aes(y= TN, x= LOCCODE, color= "red"))+
   theme(legend.position = "none", axis.text.x = element_text(angle = 45))+
-  labs(x ="Location", y = "TN (mg/L")
+  labs(x ="Location", y = "TN (mg/L)")
 b <- ggplot()+
   geom_boxplot(data= instreamdata[instreamdata$LOCCODE == "HB",], aes(y= TN, x= LOCCODE, color= "red"))+
   geom_boxplot(data= oldharris, aes(y= TN))+
   theme(legend.position = "none", axis.title.y = element_blank())+
-  labs(x ="Location", y = "TN (mg/L")
+  labs(x ="Location", y = "TN (mg/L)")
 
 a+b
 ```
@@ -952,11 +1008,24 @@ $H_a:$ new observations < old observations.
 ```{r}
 x <- median(oldharris$TN, na.rm= TRUE)
 y <- median(instreamdata[instreamdata$LOCCODE == "HB", "TN"])
-(y-x)/x * 100
+z <- (y-x)/x * 100
+z
+```
+
+ Negative value here represents a twenty percent reduction over the historical observations.
+
+```{r, warning= FALSE, echo=FALSE}
+df <- rbind(df, list("Wilcox rank sum test",
+              "Total Nitrogen",
+              "Harris Bayou", 
+            wilcox.test(y= oldharris$TN, x= instreamdata[instreamdata$LOCCODE == "HB", "TN"],
+              alternative = "less")$alternative,
+            wilcox.test(y= oldharris$TN, x= instreamdata[instreamdata$LOCCODE == "HB", "TN"],
+              alternative = "less")$p.value, z
+            )
+      )
 
 ```
- 
- Negative value here represents a twenty percent reduction over the historical observations.
 
 \newpage
 
@@ -987,7 +1056,7 @@ ggplot()+
   geom_jitter(data= oldporter, aes(y= TN, x= LOCCODE))+
   geom_jitter(data= instreamdata[instreamdata$LOCCODE == "PB",], aes(y= TN, x= LOCCODE, color= "red"))+
   theme(legend.position = "none")+
-  labs(x ="Location", y = "TN (mg/L")
+  labs(x ="Location", y = "TN (mg/L)")
   
 #coord_cartesian(ylim = c(0,2500))
 ```
@@ -997,14 +1066,14 @@ a <- ggplot()+
   geom_boxplot(data= oldporter, aes(y= TN, x= LOCCODE))+
   geom_boxplot(data= instreamdata[instreamdata$LOCCODE == "PB",], aes(y= TN, x= LOCCODE, color= "red"))+
   theme(legend.position = "none", axis.text.x = element_text(angle = 45))+
-  labs(x ="Location", y = "TN (mg/L")
+  labs(x ="Location", y = "TN (mg/L)")
     #coord_cartesian(ylim = c(0,2500))
 
 b <- ggplot()+
   geom_boxplot(data= instreamdata[instreamdata$LOCCODE == "PB",], aes(y= TN, x= LOCCODE, color= "red"))+
   geom_boxplot(data= oldporter, aes(y= TN))+
   theme(legend.position = "none", axis.title.y = element_blank())+
-  labs(x ="Location", y = "TN (mg/L")
+  labs(x ="Location", y = "TN (mg/L)")
   #coord_cartesian(ylim = c(0,2500))
 
 
@@ -1027,14 +1096,36 @@ P-value < $\alpha$ leads to rejection of null hypothesis that porter bayou TN co
 ```{r}
 x <- median(oldporter$TN, na.rm= TRUE)
 y <- median(instreamdata[instreamdata$LOCCODE == "PB", "TN"])
-(y-x)/x * 100
-
+z <- (y-x)/x * 100
+z
 ```
  
  This positive value represents an increase from the historical observations.
 
+```{r, warning= FALSE, echo=FALSE}
+df <- rbind(df, list("Wilcox rank sum test",
+              "Total Nitrogen",
+              "Porter Bayou", 
+            wilcox.test(y= oldporter$TN, x= instreamdata[instreamdata$LOCCODE == "PB", "TN"],
+              alternative = "greater")$alternative,
+            wilcox.test(y= oldporter$TN, x= instreamdata[instreamdata$LOCCODE == "PB", "TN"],
+              alternative = "greater")$p.value, z
+            )
+      )
 
+```
+ 
+\newpage
 
+# Summary
 
+```{r, results= 'asis', echo= FALSE}
+df <- df[,c(1,3,2,4,5,6)]
+df %>% 
+  arrange(Location) %>% 
+  kable(format = "latex", booktabs= TRUE) %>% 
+  collapse_rows(columns = c(1,2)) %>%
+  kable_styling(latex_options =  "scale_down")
 
-
+```
+Positive relative reduction values represent an increase over historical observations. Alternative specifies $H_a$: current observations are ___ than historical observations
