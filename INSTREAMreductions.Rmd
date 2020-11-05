@@ -607,17 +607,28 @@ detach(instreamdata)
 ### Historical Harris Bayou sites
 
 ```{r, warning= FALSE, echo=FALSE}
-summarise(oldharris, n = count(!is.na(oldharris$TUR)), Mean= mean(TUR, na.rm=TRUE), Median= median(TUR, na.rm = TRUE))
+a <- summarise(oldharris, 
+               n = count(!is.na(oldharris$TUR)),
+               Mean= mean(TUR, na.rm=TRUE),
+               Median= median(TUR, na.rm = TRUE))
+ 
+a %>%  kable()
+
+df1 <- data.frame("n"= NA, "Mean"= NA, "Median"= NA)
+df1 <- rbind(df1, a)
 ```
 
 ### Data from Harris Bayou site associated with Delta FARM project
 
 ```{r, echo=FALSE}
-instreamdata %>% 
+b <- instreamdata %>% 
   filter(LOCCODE =="HB") %>% 
 summarise(n= count(!is.na(TUR)),
           Mean= mean(TUR, na.rm= TRUE),
           Median= median(TUR, na.rm = TRUE))
+  
+b %>% kable()
+df1 <- rbind(df1, b)
 ```
 
 ### Plot the data points. 
@@ -692,17 +703,24 @@ df$relative.reduction <- z
 ### Historical Porter Bayou sites
 
 ```{r, warning= FALSE, echo=FALSE}
-summarise(oldporter, n = count(!is.na(oldporter$TUR)), Mean= mean(TUR, na.rm=TRUE), Median= median(TUR, na.rm = TRUE))
+c <- summarise(oldporter,
+               n = count(!is.na(oldporter$TUR)),
+               Mean= mean(TUR, na.rm=TRUE),
+               Median= median(TUR, na.rm = TRUE))
+c %>% kable()
+df1 <- rbind(df1, c)
 ```
 
 ### Data from Porter Bayou site associated with Delta FARM project
 
 ```{r, echo=FALSE}
-instreamdata %>% 
+d <- instreamdata %>% 
   filter(LOCCODE =="PB") %>% 
 summarise(n= count(!is.na(TUR)),
           Mean= mean(TUR, na.rm= TRUE), 
           Median= median(TUR, na.rm = TRUE))
+d %>% kable()
+df1 <- rbind(df1, d)
 ```
 
 ### Plot the data points.
@@ -779,17 +797,25 @@ df <- rbind(df, list("Wilcox rank sum test",
 ### Historical Harris Bayou sites
 
 ```{r, warning= FALSE, echo=FALSE}
-summarise(oldharris, n = count(!is.na(oldharris$TSS)), Mean= mean(TSS, na.rm=TRUE), Median= median(TSS, na.rm = TRUE))
+e <- summarise(oldharris,
+               n = count(!is.na(oldharris$TSS)),
+               Mean= mean(TSS, na.rm=TRUE),
+               Median= median(TSS, na.rm = TRUE))
+e %>% kable()
+df1 <- rbind(df1, e)
 ```
 
 ### Data from Harris Bayou site associated with Delta FARM project
 
 ```{r, echo=FALSE}
-instreamdata %>% 
+f <- instreamdata %>% 
   filter(LOCCODE =="HB") %>% 
 summarise(n= count(!is.na(TSS)),
           Mean= mean(TSS, na.rm= TRUE),
           Median= median(TSS, na.rm = TRUE))
+
+f %>% kable()
+df1 <- rbind(df1, f)
 ```
 
 ### Plot the data points. 
@@ -861,17 +887,24 @@ df <- rbind(df, list("Wilcox rank sum test",
 ### Historical Porter Bayou sites
 
 ```{r, warning= FALSE, echo=FALSE}
-summarise(oldporter, n = count(!is.na(oldporter$TSS)), Mean= mean(TSS, na.rm=TRUE), Median= median(TSS, na.rm = TRUE))
+g <- summarise(oldporter,
+               n = count(!is.na(oldporter$TSS)),
+               Mean= mean(TSS, na.rm=TRUE),
+               Median= median(TSS, na.rm = TRUE))
+g %>% kable()
+df1 <- rbind(df1, g)
 ```
 
 ### Data from Porter Bayou site associated with the original Delta FARM project
 
 ```{r, echo=FALSE}
-instreamdata %>% 
+h <- instreamdata %>% 
   filter(LOCCODE =="PB") %>% 
 summarise(n= count(!is.na(TSS)),
           Mean= mean(TSS, na.rm= TRUE), 
           Median= median(TSS, na.rm = TRUE))
+h %>% kable()
+df1 <- rbind(df1, h)
 ```
 
 ### Plot the data points. 
@@ -951,17 +984,24 @@ df <- rbind(df, list("Wilcox rank sum test",
 ### Historical Harris Bayou sites
 
 ```{r, warning= FALSE, echo=FALSE}
-summarise(oldharris, n = count(!is.na(oldharris$TN)), Mean= mean(TN, na.rm=TRUE), Median= median(TN, na.rm = TRUE))
+i <- summarise(oldharris,
+               n = count(!is.na(oldharris$TN)),
+               Mean= mean(TN, na.rm=TRUE),
+               Median= median(TN, na.rm = TRUE))
+i %>% kable()
+df1 <- rbind(df1, i)
 ```
 
 ### Data from Harris Bayou site associated with Delta FARM project
 
 ```{r, echo=FALSE}
-instreamdata %>% 
+j <- instreamdata %>% 
   filter(LOCCODE =="HB") %>% 
 summarise(n= count(!is.na(TN)),
           Mean= mean(TN, na.rm= TRUE),
           Median= median(TN, na.rm = TRUE))
+j %>% kable()
+df1 <- rbind(df1, j)
 ```
 
 ### Plot the data points. 
@@ -1034,17 +1074,24 @@ df <- rbind(df, list("Wilcox rank sum test",
 ### Historical Porter Bayou sites
 
 ```{r, warning= FALSE, echo=FALSE}
-summarise(oldporter, n = count(!is.na(oldporter$TN)), Mean= mean(TN, na.rm=TRUE), Median= median(TN, na.rm = TRUE))
+k <- summarise(oldporter,
+               n = count(!is.na(oldporter$TN)),
+               Mean= mean(TN, na.rm=TRUE),
+               Median= median(TN, na.rm = TRUE))
+k %>% kable()
+df1 <- rbind(df1, k)
 ```
 
 ### Data from Porter Bayou site associated with Delta FARM project
 
 ```{r, echo=FALSE}
-instreamdata %>% 
+l <- instreamdata %>% 
   filter(LOCCODE =="PB") %>% 
 summarise(n= count(!is.na(TN)),
           Mean= mean(TN, na.rm= TRUE), 
           Median= median(TN, na.rm = TRUE))
+l %>% kable()
+df1 <- rbind(df1, l)
 ```
 
 ### Plot the data points.
@@ -1129,3 +1176,23 @@ df %>%
 
 ```
 Positive relative reduction values represent an increase over historical observations. Alternative specifies $H_a$: current observations are ___ than historical observations
+
+
+```{r, results= 'asis', echo= FALSE}
+df1 <- df1[-1,]
+df1$Analyte <- "Turbidity" 
+df1$Analyte[5:8] <- "Total Suspended Solids"
+df1$Analyte[9:12] <- "Total Nitrogen"
+df1$Location <- c("Harris Bayou", "Harris Bayou", "Porter Bayou", "Porter Bayou",
+                  "Harris Bayou", "Harris Bayou", "Porter Bayou", "Porter Bayou",
+                  "Harris Bayou", "Harris Bayou", "Porter Bayou", "Porter Bayou")
+df1$Observation <- c("Historic", "Current", "Historic", "Current",
+                     "Historic", "Current", "Historic", "Current",
+                     "Historic", "Current", "Historic", "Current")
+df1 <- df1[,c(4,5,6,1,2,3)]
+row.names(df1) <- NULL
+df1 %>% kable(format = "latex", booktabs= TRUE) %>% 
+  collapse_rows(columns = c(1,2)) %>%
+  kable_styling(latex_options =  "scale_down")
+
+```
