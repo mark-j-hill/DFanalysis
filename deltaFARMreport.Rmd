@@ -92,7 +92,7 @@ Again, lets take a look at the structure just to make sure it's what we want.
 str(dat)
 ```
 
-Later we will want to consider our data from a seasonal perspective given the nature of the treatment. Lets go ahead and add this variable to the data frame. I'll assign the season with an if~else statement then tidy up so R will undertand this factor in our analysis.
+Later we will want to consider our data from a seasonal perspective given the nature of the treatment. Lets go ahead and add this variable to the data frame. I'll assign the season with an if~else statement then tidy up so R will understand this factor in our analysis.
 
 ```{r}
 dat$season <- ifelse(
@@ -104,16 +104,16 @@ dat$season <- ifelse(
 dat <- dat %>% 
   mutate(season = as.factor(season))
 ```
-One last thing before we move on. With a scollable box we should be able to preview our dataframe.
+One last thing before we move on. With a scrollable box we should be able to preview our dataframe.
 ```{r, out.width= "100%"}
-kable(dat, "html", digits = 4) %>% 
+kable(dat, "html", digits = 4, booktabs= T) %>% 
   kable_paper() %>% 
   scroll_box(height = "600px")
 ```
 
 
 # Quality Assurance
-Next we want to evaluate all the controls we put in place to make sure our data is sound. These included labratory standards and standard operating procedures. If the minimum amount of quality objectives (80%) were not met for for each sampling trip the values will be dropped and not considered for analysis.   
+Next we want to evaluate all the controls we put in place to make sure our data is sound. These included laboratory standards and standard operating procedures. If the minimum amount of quality objectives (80%) were not met for for each sampling trip the values will be dropped and not considered for analysis.   
     
 ## Standard checks 
 
@@ -672,9 +672,8 @@ rm(arr, car, dcdc, mos, mur, muz, sch, sim, stu, pbr, pre)
 and how about a looksy
 ```{r}
 dat.pair <- dat.pair[ order(dat.pair$Date, dat.pair$sampleid),]
-kable(tail(dat.pair[,c(1:5,9:11)]), caption = "Table 3.1: Example of 'dat.pair'") %>% 
-  kable_paper() %>% 
-  remove_column(1)
+kable(tail(dat.pair[,c(1:5,9:11)]), caption = "Table 3.1: Example of 'dat.pair'", row.names = FALSE) %>% 
+  kable_paper()
 ```
 As you can see the data frame, `dat.pair` contains only records where samples were collected for both the treatment and control.
 
@@ -720,9 +719,9 @@ for (i in 4:48) {
   }
 }
 
-kable(tail(dat.reduct[c(1,2,4,5,50,51,6,7,52,53)]), caption = "Table 4.1: Example of 'dat.reduct'", digits = 3) %>% 
-  kable_paper() %>% 
-  remove_column(1)
+kable(tail(dat.reduct[c(1,2,4,5,50,51,6,7,52,53)]), caption = "Table 4.1: Example of 'dat.reduct'",
+      digits = 3, row.names = FALSE) %>% 
+  kable_paper()
 
 ```
 Now we have new columns with a `.dif` and `.per` suffix. These represent absolute difference and relative reduction respectively.  
@@ -784,9 +783,9 @@ df <- do.call(
 )
 df <- df[,c(10,1:9)]
 knitr::kable(df, caption = "Table 5.2: Statistical summary of nutrient concentrations (EOF only)", digits = 4,
-            col.names = c('Analyte', 'min', 'Q1', 'Median', 'Q3', 'max', 'mean', 'std dev.', 'n=', 'na') ) %>% 
-  kable_paper() %>% 
-  remove_column(1)
+             row.names = FALSE, col.names = 
+               c('Analyte', 'min', 'Q1', 'Median', 'Q3', 'max', 'mean', 'std dev.', 'n=', 'na') ) %>% 
+  kable_paper()
 ```
 
 ```{r, echo=FALSE}
@@ -802,10 +801,10 @@ df <- do.call(
   df
 )
 df <- df[,c(10,1:9)]
-knitr::kable(df, caption = "Table 5.3: Statistical summary of nutrient concentrations from paired events (EOF only)", digits = 4,
-            col.names = c('Analyte', 'min', 'Q1', 'Median', 'Q3', 'max', 'mean', 'std dev.', 'n=', 'na') ) %>% 
-  kable_paper() %>% 
-  remove_column(1)
+knitr::kable(df, caption = "Table 5.3: Statistical summary of nutrient concentrations from paired events (EOF only)",
+             digits = 4, row.names = FALSE, col.names = 
+               c('Analyte', 'min', 'Q1', 'Median', 'Q3', 'max', 'mean', 'std dev.', 'n=', 'na') ) %>% 
+  kable_paper() 
 ```
 
 
@@ -865,10 +864,9 @@ df <- do.call(
   df
 )
 df <- df[,c(10,1:9)]
-knitr::kable(df, caption = "Table 5.6: Statistical summary of nutrient concentrations at instream monitoring sites (INST only)", digits = 2,
+knitr::kable(df, caption = "Table 5.6: Statistical summary of nutrient concentrations at instream monitoring sites (INST only)", digits = 2, row.names = FALSE,
             col.names = c('Analyte', 'min', 'Q1', 'Median', 'Q3', 'max', 'mean', 'std dev.', 'n=', 'na') ) %>% 
-  kable_paper() %>% 
-  remove_column(1)
+  kable_paper() 
 ```
 
 ```{r, warning=FALSE}
@@ -886,12 +884,11 @@ df <- do.call(
 
 df <- df[,c(11,1:10)]
 df <- remove_missing(df)
-knitr::kable(df, caption = "Table 5.7: Statistical summary of nutrient concentrations at instream monitoring sites (Harris Bayou tributary and Porter Bayou)", digits = 2,
+knitr::kable(df, caption = "Table 5.7: Statistical summary of nutrient concentrations at instream monitoring sites (Harris Bayou tributary and Porter Bayou)", digits = 2, row.names = FALSE,
             col.names = c('Analyte','site', 'min', 'Q1', 'Median', 'Q3', 'max',
                           'mean', 'std dev.', 'n=', 'na') 
             ) %>% 
   kable_paper() %>% 
-  remove_column(1) %>% 
   collapse_rows(1)
 ```
 
@@ -967,6 +964,7 @@ kable(df, digits = 5, caption = "Table 6.1: Shapiro-Wilk normality test results"
 
 
 ### Anlayte concentrations by treatment and across time
+
 Tables 5.2-8 nicely summarize our variable distributions yet plotting these can prove more meaningful, or at least better illustrate them. Here we want to understand several factors that we have established already: entire data, paired data points, and events that occurred during our cover crop season, as well as paired events during the cover season. As we have established that our data in non-normal, I went ahead and superimposed the results for a two sided rank sum test. A p-value less than 0.05 would indicate that we can reject the null hypothesis that the difference in means is equal to 0. In lower plot a black bar represents the median value and blue line is a locally smoothed regression line to aid in seeing trend over time. (method= `loess()`)
 ```{r, out.width= "100%", warning= FALSE, message= FALSE, fig.cap= "Figure 6.2"}
 p1 <- ggplot(dat[dat$sample.type == "EOF",], 
@@ -1075,7 +1073,7 @@ p5 <- ggplot(dat[dat$sample.type == "EOF",], aes(Date, TUR.ntu))+
 p1 <- ggplot(dat[dat$sample.type == "EOF",], 
              aes(y= NO3.NO2.mgl, x= "All year", colour= treatment))+
   geom_boxplot(outlier.shape = NA )+
-  coord_cartesian(ylim= c(0,9))+
+  coord_cartesian(ylim= c(0,10))+
   stat_compare_means(
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 7.5)+
@@ -1084,7 +1082,7 @@ p1 <- ggplot(dat[dat$sample.type == "EOF",],
 p2 <- ggplot(dat.pair[dat.pair$sample.type == "EOF",], 
              aes(y= NO3.NO2.mgl, x= " paired All year", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
-  coord_cartesian(ylim= c(0,9))+
+  coord_cartesian(ylim= c(0,10))+
   stat_compare_means(paired= TRUE, method.args = list(alternative = "greater"),
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 7.5)+
@@ -1094,7 +1092,7 @@ p2 <- ggplot(dat.pair[dat.pair$sample.type == "EOF",],
 p3 <- ggplot(dat[dat$sample.type == "EOF" & dat$season == "cover",], 
              aes(y= NO3.NO2.mgl, x= "Cover season", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
-  coord_cartesian(ylim= c(0,9))+
+  coord_cartesian(ylim= c(0,10))+
   stat_compare_means(
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 7.5)+
@@ -1103,7 +1101,7 @@ p3 <- ggplot(dat[dat$sample.type == "EOF" & dat$season == "cover",],
 p4 <- ggplot(dat.pair[dat.pair$sample.type == "EOF" & dat.pair$season == "cover",], 
              aes(y= NO3.NO2.mgl, x= "paired Cover season", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
-  coord_cartesian(ylim= c(0,9))+
+  coord_cartesian(ylim= c(0,10))+
   stat_compare_means(paired= TRUE,  method.args = list(alternative = "greater"),
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 7.5)+
@@ -1183,7 +1181,7 @@ p1 <- ggplot(dat[dat$sample.type == "EOF",],
   coord_cartesian(ylim= c(0,14))+
   stat_compare_means(
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
-    label.y = 11.5)+
+    label.y = 11)+
   theme(axis.title.x = element_blank())
 
 p2 <- ggplot(dat.pair[dat.pair$sample.type == "EOF",], 
@@ -1192,7 +1190,7 @@ p2 <- ggplot(dat.pair[dat.pair$sample.type == "EOF",],
   coord_cartesian(ylim= c(0,14))+
   stat_compare_means(method.args = list(alternative = "greater"), paired= TRUE,
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
-    label.y = 11.5)+
+    label.y = 11)+
   theme(axis.title.y = element_blank(), axis.title.x = element_blank())
 
 p3 <- ggplot(dat[dat$sample.type == "EOF" & dat$season == "cover",], 
@@ -1201,7 +1199,7 @@ p3 <- ggplot(dat[dat$sample.type == "EOF" & dat$season == "cover",],
   coord_cartesian(ylim= c(0,14))+
   stat_compare_means(
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
-    label.y = 11.5)+
+    label.y = 11)+
   theme(axis.title.y = element_blank(), axis.title.x = element_blank())
 
 p4 <- ggplot(dat.pair[dat.pair$sample.type == "EOF" & dat.pair$season == "cover",], 
@@ -1210,7 +1208,7 @@ p4 <- ggplot(dat.pair[dat.pair$sample.type == "EOF" & dat.pair$season == "cover"
   coord_cartesian(ylim= c(0,14))+
   stat_compare_means(method.args = list(alternative = "greater"), paired= TRUE,
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
-    label.y = 11.5)+
+    label.y = 11)+
   theme(axis.title.y = element_blank(), axis.title.x = element_blank())
 
 p5 <- ggplot(dat[dat$sample.type == "EOF",], aes(Date, TN.mgl))+
@@ -1233,7 +1231,7 @@ p5 <- ggplot(dat[dat$sample.type == "EOF",], aes(Date, TN.mgl))+
 p1 <- ggplot(dat[dat$sample.type == "EOF",], 
              aes(y= TIP.mgl, x= "All year", colour= treatment))+
   geom_boxplot(outlier.shape = NA )+
-  coord_cartesian(ylim= c(0,14))+
+  coord_cartesian(ylim= c(0,15))+
   stat_compare_means(
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 11.5)+
@@ -1242,7 +1240,7 @@ p1 <- ggplot(dat[dat$sample.type == "EOF",],
 p2 <- ggplot(dat.pair[dat.pair$sample.type == "EOF",], 
              aes(y= TIP.mgl, x= "paired All year", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
-  coord_cartesian(ylim= c(0,14))+
+  coord_cartesian(ylim= c(0,15))+
   stat_compare_means(method.args = list(alternative = "greater"), paired= TRUE,
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 11.5)+
@@ -1251,7 +1249,7 @@ p2 <- ggplot(dat.pair[dat.pair$sample.type == "EOF",],
 p3 <- ggplot(dat[dat$sample.type == "EOF" & dat$season == "cover",], 
              aes(y= TIP.mgl, x= "Cover season", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
-  coord_cartesian(ylim= c(0,14))+
+  coord_cartesian(ylim= c(0,15))+
   stat_compare_means(
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 11.5)+
@@ -1260,7 +1258,7 @@ p3 <- ggplot(dat[dat$sample.type == "EOF" & dat$season == "cover",],
 p4 <- ggplot(dat.pair[dat.pair$sample.type == "EOF" & dat.pair$season == "cover",], 
              aes(y= TIP.mgl, x= "paired Cover season", colour= treatment))+
   geom_boxplot(outlier.shape = NA)+
-  coord_cartesian(ylim= c(0,14))+
+  coord_cartesian(ylim= c(0,15))+
   stat_compare_means(method.args = list(alternative = "greater"), paired= TRUE,
     aes(label = paste0(..method.., "\n", "p =", ..p.format..)),
     label.y = 11.5)+
@@ -1555,7 +1553,7 @@ analyteplot(dats$TIP.lbac,"Phosphorus discharge","pounds/acre", 4.5)
 
 ## Reduction Potential Distributions
 
-Here we can evaluate the distribution of reduction potentials. Each paired event produces a reduction (or increase) value for all the respective analytes. See section 4: Reduction Potential for explanation on how we produced these values. Again, (+) values represent a reduction relative to the control and (-) values represent negative reduction, i.e. an increase in concentrations on the treatment plots. The nature of the calculation allows for extremely negative numbers and a maximum reduction of 100%. (fbm - ccmt)/fbm If there was no nutrient in ccmt runnoff that would represent a 100% reduction. Conversely if the concentrations are higher on the ccmt treatment our (-) reduction can increase infinitely.
+Here we can evaluate the distribution of reduction potentials. Each paired event produces a reduction (or increase) value for all the respective analytes. See section 4: Reduction Potential for explanation on how we produced these values. Again, (+) values represent a reduction relative to the control and (-) values represent negative reduction, i.e. an increase in concentrations on the treatment plots. The nature of the calculation allows for extremely negative numbers and a maximum reduction of 100%. (fbm - ccmt)/fbm If there was no nutrient in ccmt runoff that would represent a 100% reduction. Conversely if the concentrations are higher on the ccmt treatment our (-) reduction can increase infinitely.
 
 ```{r}
 df <- list()
@@ -1570,10 +1568,11 @@ df <- do.call(
   df
 )
 df <- df[c(10,1:9)]
-knitr::kable(df, caption = "Table 6.1: Statistical summary of reduction potentials from paired events only", digits = 2 ,
+knitr::kable(df, caption = "Table 6.1: Statistical summary of reduction potentials from paired events only", 
+             digits = 2, row.names = FALSE,
              col.names = c("Analyte", "min","Q1","median","Q3","max","mean","sd","n=", "NA")) %>% 
-  kable_paper() %>% 
-  remove_column(1)
+  kable_paper()
+ 
 ```
 
 
